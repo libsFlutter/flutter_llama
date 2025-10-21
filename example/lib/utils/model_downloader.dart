@@ -65,6 +65,7 @@ class ModelDownloader {
       // Загружаем файл с отслеживанием прогресса
       final bytes = <int>[];
       int downloaded = 0;
+      int lastReportedMB = 0;
 
       await for (final chunk in response.stream) {
         bytes.addAll(chunk);
@@ -74,7 +75,9 @@ class ModelDownloader {
           final progress = downloaded / contentLength;
           onProgress(progress);
           
-          if (downloaded % (1024 * 1024) == 0 || downloaded == contentLength) {
+          final currentMB = downloaded ~/ (1024 * 1024);
+          if (currentMB > lastReportedMB || downloaded == contentLength) {
+            lastReportedMB = currentMB;
             print('Downloaded: ${_formatBytes(downloaded)} / ${_formatBytes(contentLength)} (${(progress * 100).toStringAsFixed(1)}%)');
           }
         }

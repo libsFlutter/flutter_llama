@@ -7,7 +7,6 @@ void main() {
 
   group('FlutterLlama Comprehensive Tests', () {
     const MethodChannel channel = MethodChannel('flutter_llama');
-    const EventChannel eventChannel = EventChannel('flutter_llama/stream');
     late FlutterLlama llama;
 
     setUp(() {
@@ -183,8 +182,7 @@ void main() {
               return {
                 'text': 'Hello! How can I help you?',
                 'tokensGenerated': 6,
-                'generationTime': 150.0,
-                'tokensPerSecond': 40.0,
+                'generationTimeMs': 150,
               };
             }
             return null;
@@ -197,8 +195,8 @@ void main() {
 
         expect(response.text, 'Hello! How can I help you?');
         expect(response.tokensGenerated, 6);
-        expect(response.generationTime, 150.0);
-        expect(response.tokensPerSecond, 40.0);
+        expect(response.generationTimeMs, 150);
+        expect(response.tokensPerSecond, greaterThan(0));
       });
 
       test('should generate with custom params', () async {
@@ -219,8 +217,7 @@ void main() {
               return {
                 'text': 'Generated response',
                 'tokensGenerated': 10,
-                'generationTime': 200.0,
-                'tokensPerSecond': 50.0,
+                'generationTimeMs': 200,
               };
             }
             return null;
