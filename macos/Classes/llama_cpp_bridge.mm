@@ -1,22 +1,17 @@
 /*
- * Flutter Llama - JNI Bridge for Android
+ * Flutter Llama - llama.cpp Bridge for iOS
  * 
- * This file provides JNI bindings between Kotlin and llama.cpp
+ * This file provides a C++ bridge between Swift and llama.cpp
  * Updated for latest llama.cpp API
  */
 
-#include <jni.h>
+#import <Foundation/Foundation.h>
 #include <string>
 #include <vector>
 #include <mutex>
-#include <android/log.h>
-
-#define LOG_TAG "FlutterLlamaBridge"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 // Include llama.cpp headers
-#include "llama.h"
+#include "../../llama.cpp/include/llama.h"
 
 // Global state
 static llama_model* g_model = nullptr;
@@ -31,24 +26,20 @@ static size_t g_stream_pos = 0;
 extern "C" {
 
 // Initialize and load model
-JNIEXPORT jboolean JNICALL
-Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeInitModel(
-    JNIEnv* env,
-    jobject thiz,
-    jstring model_path,
-    jint n_threads,
-    jint n_gpu_layers,
-    jint context_size,
-    jint batch_size,
-    jboolean use_gpu,
-    jboolean verbose
+bool llama_init_model(
+    const char* model_path,
+    int32_t n_threads,
+    int32_t n_gpu_layers,
+    int32_t context_size,
+    int32_t batch_size,
+    bool use_gpu,
+    bool verbose
 ) {
     std::lock_guard<std::mutex> lock(g_mutex);
     
-    const char* path = env->GetStringUTFChars(model_path, nullptr);
-    
-    LOGI("Initializing model: %s", path);
-    LOGI("Threads: %d, GPU layers: %d, Context: %d", n_threads, n_gpu_layers, context_size);
+    NSLog(@"[llama_cpp_bridge] Initializing model: %s", model_path);
+    NSLog(@"[llama_cpp_bridge] Threads: %d, GPU layers: %d, Context: %d", 
+          n_threads, n_gpu_layers, context_size);
     
     // Free existing model if any
     if (g_sampler) {
@@ -72,11 +63,10 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeInitModel(
     model_params.n_gpu_layers = use_gpu ? n_gpu_layers : 0;
     
     // Load model
-    g_model = llama_model_load_from_file(path, model_params);
+    g_model = llama_model_load_from_file(model_path, model_params);
     if (!g_model) {
-        LOGE("Failed to load model from: %s", path);
-        env->ReleaseStringUTFChars(model_path, path);
-        return JNI_FALSE;
+        NSLog(@"[llama_cpp_bridge] Failed to load model from: %s", model_path);
+        return false;
     }
     
     // Get vocab
@@ -91,11 +81,10 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeInitModel(
     
     g_context = llama_init_from_model(g_model, ctx_params);
     if (!g_context) {
-        LOGE("Failed to create context");
+        NSLog(@"[llama_cpp_bridge] Failed to create context");
         llama_free_model(g_model);
         g_model = nullptr;
-        env->ReleaseStringUTFChars(model_path, path);
-        return JNI_FALSE;
+        return false;
     }
     
     // Initialize sampler chain
@@ -109,45 +98,42 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeInitModel(
     llama_sampler_chain_add(g_sampler, llama_sampler_init_top_k(40));
     llama_sampler_chain_add(g_sampler, llama_sampler_init_dist(1234));
     
-    LOGI("Model loaded successfully");
-    LOGI("Context size: %d", llama_n_ctx(g_context));
+    NSLog(@"[llama_cpp_bridge] Model loaded successfully");
+    NSLog(@"[llama_cpp_bridge] Context size: %d", llama_n_ctx(g_context));
     
-    env->ReleaseStringUTFChars(model_path, path);
-    return JNI_TRUE;
+    return true;
 }
 
 // Generate text
-JNIEXPORT jobject JNICALL
-Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerate(
-    JNIEnv* env,
-    jobject thiz,
-    jstring prompt,
-    jfloat temperature,
-    jfloat top_p,
-    jint top_k,
-    jint max_tokens,
-    jfloat repeat_penalty
+bool llama_generate(
+    const char* prompt,
+    float temperature,
+    float top_p,
+    int32_t top_k,
+    int32_t max_tokens,
+    float repeat_penalty,
+    char* output,
+    int32_t output_size,
+    int32_t* tokens_generated
 ) {
     std::lock_guard<std::mutex> lock(g_mutex);
     
     if (!g_model || !g_context || !g_vocab) {
-        LOGE("Model not loaded");
-        return nullptr;
+        NSLog(@"[llama_cpp_bridge] Model not loaded");
+        return false;
     }
     
-    const char* prompt_str = env->GetStringUTFChars(prompt, nullptr);
-    LOGI("Generating with prompt: %.50s...", prompt_str);
+    NSLog(@"[llama_cpp_bridge] Generating with prompt: %.50s...", prompt);
     
-    std::string prompt_text(prompt_str);
-    env->ReleaseStringUTFChars(prompt, prompt_str);
+    std::string prompt_text(prompt);
     
     // Tokenize prompt
     const int n_prompt = -llama_tokenize(g_vocab, prompt_text.c_str(), prompt_text.size(), NULL, 0, true, true);
     std::vector<llama_token> prompt_tokens(n_prompt);
     
     if (llama_tokenize(g_vocab, prompt_text.c_str(), prompt_text.size(), prompt_tokens.data(), prompt_tokens.size(), true, true) < 0) {
-        LOGE("Failed to tokenize prompt");
-        return nullptr;
+        NSLog(@"[llama_cpp_bridge] Failed to tokenize prompt");
+        return false;
     }
     
     // Create batch
@@ -155,8 +141,8 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerate(
     
     // Decode prompt
     if (llama_decode(g_context, batch) != 0) {
-        LOGE("Failed to decode prompt");
-        return nullptr;
+        NSLog(@"[llama_cpp_bridge] Failed to decode prompt");
+        return false;
     }
     
     // Update sampler with new parameters
@@ -171,14 +157,14 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerate(
     
     // Generate tokens
     std::string result;
-    int n_generated = 0;
+    int n_gen = 0;
     int n_pos = prompt_tokens.size();
     
     g_should_stop = false;
     
     for (int i = 0; i < max_tokens; i++) {
         if (g_should_stop) {
-            LOGI("Generation stopped by user");
+            NSLog(@"[llama_cpp_bridge] Generation stopped by user");
             break;
         }
         
@@ -187,7 +173,7 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerate(
         
         // Check for EOS
         if (llama_vocab_is_eog(g_vocab, new_token)) {
-            LOGI("EOS token reached");
+            NSLog(@"[llama_cpp_bridge] EOS token reached");
             break;
         }
         
@@ -204,52 +190,38 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerate(
         n_pos++;
         
         if (llama_decode(g_context, batch) != 0) {
-            LOGE("Failed to decode token");
+            NSLog(@"[llama_cpp_bridge] Failed to decode token");
             break;
         }
         
-        n_generated++;
+        n_gen++;
     }
     
-    LOGI("Generated %d tokens", n_generated);
+    // Copy result
+    size_t copy_len = std::min(result.length(), (size_t)(output_size - 1));
+    memcpy(output, result.c_str(), copy_len);
+    output[copy_len] = '\0';
+    *tokens_generated = n_gen;
     
-    // Create GenerationResult object
-    jclass result_class = env->FindClass("net/nativemind/flutter_llama/FlutterLlamaPlugin$GenerationResult");
-    if (!result_class) {
-        LOGE("Failed to find GenerationResult class");
-        return nullptr;
-    }
-    
-    jmethodID constructor = env->GetMethodID(result_class, "<init>", "(Ljava/lang/String;I)V");
-    if (!constructor) {
-        LOGE("Failed to find GenerationResult constructor");
-        return nullptr;
-    }
-    
-    jstring j_result = env->NewStringUTF(result.c_str());
-    jobject generation_result = env->NewObject(result_class, constructor, j_result, n_generated);
-    
-    return generation_result;
+    NSLog(@"[llama_cpp_bridge] Generated %d tokens", n_gen);
+    return true;
 }
 
 // Initialize streaming generation
-JNIEXPORT void JNICALL
-Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamInit(
-    JNIEnv* env,
-    jobject thiz,
-    jstring prompt,
-    jfloat temperature,
-    jfloat top_p,
-    jint top_k,
-    jint max_tokens,
-    jfloat repeat_penalty
+void llama_generate_stream_init(
+    const char* prompt,
+    float temperature,
+    float top_p,
+    int32_t top_k,
+    int32_t max_tokens,
+    float repeat_penalty
 ) {
     std::lock_guard<std::mutex> lock(g_mutex);
     
-    LOGI("Initializing stream generation");
+    NSLog(@"[llama_cpp_bridge] Initializing stream generation");
     
     if (!g_model || !g_context || !g_vocab) {
-        LOGE("Model not loaded");
+        NSLog(@"[llama_cpp_bridge] Model not loaded");
         return;
     }
     
@@ -257,16 +229,14 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamInit(
     g_stream_tokens.clear();
     g_stream_pos = 0;
     
-    const char* prompt_str = env->GetStringUTFChars(prompt, nullptr);
-    std::string prompt_text(prompt_str);
-    env->ReleaseStringUTFChars(prompt, prompt_str);
+    std::string prompt_text(prompt);
     
     // Tokenize prompt
     const int n_prompt = -llama_tokenize(g_vocab, prompt_text.c_str(), prompt_text.size(), NULL, 0, true, true);
     std::vector<llama_token> prompt_tokens(n_prompt);
     
     if (llama_tokenize(g_vocab, prompt_text.c_str(), prompt_text.size(), prompt_tokens.data(), prompt_tokens.size(), true, true) < 0) {
-        LOGE("Failed to tokenize prompt");
+        NSLog(@"[llama_cpp_bridge] Failed to tokenize prompt");
         return;
     }
     
@@ -275,7 +245,7 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamInit(
     
     // Decode prompt
     if (llama_decode(g_context, batch) != 0) {
-        LOGE("Failed to decode prompt");
+        NSLog(@"[llama_cpp_bridge] Failed to decode prompt");
         return;
     }
     
@@ -318,83 +288,63 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamInit(
         }
     }
     
-    LOGI("Pre-generated %zu tokens for streaming", g_stream_tokens.size());
+    NSLog(@"[llama_cpp_bridge] Pre-generated %zu tokens for streaming", g_stream_tokens.size());
 }
 
 // Get next token in stream
-JNIEXPORT jstring JNICALL
-Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamNext(
-    JNIEnv* env,
-    jobject thiz
+bool llama_generate_stream_next(
+    char* output,
+    int32_t output_size
 ) {
     std::lock_guard<std::mutex> lock(g_mutex);
     
     if (g_should_stop || g_stream_pos >= g_stream_tokens.size()) {
-        return nullptr;
+        return false;
     }
     
     const std::string& token = g_stream_tokens[g_stream_pos++];
-    return env->NewStringUTF(token.c_str());
+    
+    size_t copy_len = std::min(token.length(), (size_t)(output_size - 1));
+    memcpy(output, token.c_str(), copy_len);
+    output[copy_len] = '\0';
+    
+    return true;
 }
 
 // End streaming generation
-JNIEXPORT void JNICALL
-Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamEnd(
-    JNIEnv* env,
-    jobject thiz
-) {
+void llama_generate_stream_end() {
     std::lock_guard<std::mutex> lock(g_mutex);
     
-    LOGI("Ending stream generation");
+    NSLog(@"[llama_cpp_bridge] Ending stream generation");
     g_stream_tokens.clear();
     g_stream_pos = 0;
 }
 
 // Get model information
-JNIEXPORT jobject JNICALL
-Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGetModelInfo(
-    JNIEnv* env,
-    jobject thiz
+void llama_get_model_info(
+    int64_t* n_params,
+    int32_t* n_layers,
+    int32_t* context_size
 ) {
     std::lock_guard<std::mutex> lock(g_mutex);
     
     if (!g_model || !g_context) {
-        return nullptr;
+        *n_params = 0;
+        *n_layers = 0;
+        *context_size = 0;
+        return;
     }
     
-    jlong n_params = llama_model_n_params(g_model);
-    jint n_layers = llama_model_n_layer(g_model);
-    jint context_size = llama_n_ctx(g_context);
-    
-    LOGI("Model info: params=%lld, layers=%d, context=%d", 
-         (long long)n_params, n_layers, context_size);
-    
-    // Create ModelInfo object
-    jclass info_class = env->FindClass("net/nativemind/flutter_llama/FlutterLlamaPlugin$ModelInfo");
-    if (!info_class) {
-        LOGE("Failed to find ModelInfo class");
-        return nullptr;
-    }
-    
-    jmethodID constructor = env->GetMethodID(info_class, "<init>", "(JII)V");
-    if (!constructor) {
-        LOGE("Failed to find ModelInfo constructor");
-        return nullptr;
-    }
-    
-    jobject model_info = env->NewObject(info_class, constructor, n_params, n_layers, context_size);
-    return model_info;
+    *n_params = llama_model_n_params(g_model);
+    *n_layers = llama_model_n_layer(g_model);
+    *context_size = llama_n_ctx(g_context);
 }
 
 // Free model
-JNIEXPORT void JNICALL
-Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeFreeModel(
-    JNIEnv* env,
-    jobject thiz
-) {
+void llama_bridge_free_model() {
     std::lock_guard<std::mutex> lock(g_mutex);
     
-    LOGI("Freeing model");
+    NSLog(@"[llama_cpp_bridge] Freeing model");
     
     if (g_sampler) {
         llama_sampler_free(g_sampler);
@@ -413,18 +363,14 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeFreeModel(
     
     g_vocab = nullptr;
     
-    LOGI("Model freed successfully");
+    NSLog(@"[llama_cpp_bridge] Model freed successfully");
 }
 
 // Stop generation
-JNIEXPORT void JNICALL
-Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeStopGeneration(
-    JNIEnv* env,
-    jobject thiz
-) {
+void llama_stop_generation() {
     std::lock_guard<std::mutex> lock(g_mutex);
     
-    LOGI("Stopping generation");
+    NSLog(@"[llama_cpp_bridge] Stopping generation");
     g_should_stop = true;
 }
 

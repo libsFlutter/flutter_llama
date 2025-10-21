@@ -13,9 +13,9 @@ set(CMAKE_C_STANDARD 11)
 # Enable position independent code
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Optimization flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -ffast-math -funroll-loops -DNDEBUG")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math -funroll-loops -DNDEBUG")
+# Optimization flags (note: -ffast-math removed, using -fno-finite-math-only for llama.cpp)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -fno-finite-math-only -funroll-loops -DNDEBUG")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fno-finite-math-only -funroll-loops -DNDEBUG")
 
 # Android specific optimizations
 if(ANDROID)
@@ -48,14 +48,10 @@ set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
 set(GGML_NATIVE OFF CACHE BOOL "" FORCE)
 set(GGML_LTO ON CACHE BOOL "" FORCE)
 
-# llama.cpp source files
-set(LLAMA_SOURCES
-    ${LLAMA_CPP_DIR}/src/llama.cpp
-    ${LLAMA_CPP_DIR}/src/llama-vocab.cpp
-    ${LLAMA_CPP_DIR}/src/llama-grammar.cpp
-    ${LLAMA_CPP_DIR}/src/llama-sampling.cpp
-    ${LLAMA_CPP_DIR}/common/common.cpp
-    ${LLAMA_CPP_DIR}/common/sampling.cpp
+# llama.cpp source files - include all necessary files
+file(GLOB LLAMA_SOURCES
+    ${LLAMA_CPP_DIR}/src/llama*.cpp
+    ${LLAMA_CPP_DIR}/src/unicode*.cpp
 )
 
 # ggml source files
@@ -67,7 +63,21 @@ set(GGML_SOURCES
     ${LLAMA_CPP_DIR}/ggml/src/ggml-backend-reg.cpp
     ${LLAMA_CPP_DIR}/ggml/src/ggml-quants.c
     ${LLAMA_CPP_DIR}/ggml/src/ggml-threading.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-opt.cpp
     ${LLAMA_CPP_DIR}/ggml/src/gguf.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/ggml-cpu.c
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/ggml-cpu.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/binary-ops.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/unary-ops.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/ops.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/traits.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/vec.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/repack.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/hbm.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/quants.c
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/arch/arm/quants.c
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/arch/arm/cpu-feats.cpp
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu/arch/arm/repack.cpp
 )
 
 # Bridge source files
@@ -85,9 +95,10 @@ add_library(flutter_llama_bridge SHARED
 # Include directories
 target_include_directories(flutter_llama_bridge PRIVATE
     ${LLAMA_CPP_DIR}/include
-    ${LLAMA_CPP_DIR}/common
+    ${LLAMA_CPP_DIR}/src
     ${LLAMA_CPP_DIR}/ggml/include
     ${LLAMA_CPP_DIR}/ggml/src
+    ${LLAMA_CPP_DIR}/ggml/src/ggml-cpu
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
@@ -95,6 +106,16 @@ target_include_directories(flutter_llama_bridge PRIVATE
 target_compile_definitions(flutter_llama_bridge PRIVATE
     GGML_USE_CPU
     NDEBUG
+)
+
+# Compiler-specific definitions (passed as flags to avoid type issues)
+target_compile_options(flutter_llama_bridge PRIVATE
+    -DGGML_VERSION=\"1.0.0\"
+    -DGGML_COMMIT=\"flutter_llama\"
+    -DLLAMA_BUILD_NUMBER=1
+    -DLLAMA_COMMIT=\"flutter_llama\"
+    -DLLAMA_COMPILER=\"clang++\"
+    -DLLAMA_BUILD_TARGET=\"android-${ANDROID_ABI}\"
 )
 
 # Link libraries

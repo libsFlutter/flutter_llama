@@ -12,11 +12,11 @@ void main() async {
     // 1. Проверка/загрузка модели
     print('📦 Шаг 1: Проверка модели...');
     String? modelPath = await ModelDownloader.getModelPath('braindler-q2_k');
-    
+
     if (modelPath == null) {
       print('⬇️  Модель не найдена, начинается загрузка...');
       print('   (Размер: 72 MB, это может занять время)\n');
-      
+
       modelPath = await ModelDownloader.downloadModel(
         'braindler-q2_k',
         onProgress: (progress) {
@@ -34,7 +34,7 @@ void main() async {
     // 2. Инициализация FlutterLlama
     print('🔧 Шаг 2: Инициализация FlutterLlama...');
     final llama = FlutterLlama.instance;
-    
+
     final config = LlamaConfig(
       modelPath: modelPath,
       nThreads: 4,
@@ -101,7 +101,7 @@ void main() async {
     try {
       print('📝 Промпт: "Расскажи короткую историю"\n');
       print('🔄 Генерация (streaming):\n');
-      
+
       final streamParams = GenerationParams(
         prompt: 'Расскажи короткую историю',
         maxTokens: 60,
@@ -117,11 +117,13 @@ void main() async {
       }
 
       stopwatch.stop();
-      
+
       print('\n\n📊 Статистика:');
       print('   Токенов: ${tokens.length}');
       print('   Время: ${stopwatch.elapsedMilliseconds}ms');
-      print('   Скорость: ${(tokens.length / stopwatch.elapsedMilliseconds * 1000).toStringAsFixed(2)} tok/s');
+      print(
+        '   Скорость: ${(tokens.length / stopwatch.elapsedMilliseconds * 1000).toStringAsFixed(2)} tok/s',
+      );
     } catch (e) {
       print('⚠️  Streaming не поддерживается или не реализован: $e');
     }
@@ -131,11 +133,10 @@ void main() async {
     print('🧹 Завершение работы...');
     await llama.unloadModel();
     print('✅ Модель выгружена');
-    
+
     print('\n╔════════════════════════════════════════════════════╗');
     print('║              ДЕМОНСТРАЦИЯ ЗАВЕРШЕНА               ║');
     print('╚════════════════════════════════════════════════════╝');
-
   } catch (e, stackTrace) {
     print('\n❌ Ошибка: $e');
     print('Stack trace:\n$stackTrace');
@@ -170,13 +171,14 @@ Future<void> _testGeneration(
     print('┌─────────────────────────────────────────────┐');
     print('│ ${_wrapText(response.text, 43)}');
     print('└─────────────────────────────────────────────┘');
-    
+
     print('\n📊 Статистика:');
     print('   Токенов сгенерировано: ${response.tokensGenerated}');
     print('   Время генерации: ${response.generationTimeMs}ms');
-    print('   Скорость: ${response.tokensPerSecond.toStringAsFixed(2)} tokens/sec');
+    print(
+      '   Скорость: ${response.tokensPerSecond.toStringAsFixed(2)} tokens/sec',
+    );
     print('   Длина текста: ${response.text.length} символов');
-
   } catch (e) {
     stopwatch.stop();
     print('❌ Ошибка генерации: $e');
@@ -187,7 +189,7 @@ Future<void> _testGeneration(
 String _wrapText(String text, int width) {
   final lines = <String>[];
   var currentLine = '';
-  
+
   for (final word in text.split(' ')) {
     if (currentLine.isEmpty) {
       currentLine = word;
@@ -198,11 +200,10 @@ String _wrapText(String text, int width) {
       currentLine = word;
     }
   }
-  
+
   if (currentLine.isNotEmpty) {
     lines.add(currentLine);
   }
-  
+
   return lines.join(' │\n│ ');
 }
-
