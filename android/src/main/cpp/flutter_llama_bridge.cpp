@@ -2,7 +2,6 @@
  * Flutter Llama - JNI Bridge for Android
  * 
  * This file provides JNI bindings between Kotlin and llama.cpp
- * Requires llama.cpp to be compiled and linked
  */
 
 #include <jni.h>
@@ -15,14 +14,10 @@
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
-// Forward declarations for llama.cpp types
-// TODO: Include actual llama.cpp headers when available
-// #include "llama.h"
-
-// Temporary mock structures until llama.cpp is integrated
-struct llama_model {};
-struct llama_context {};
-struct llama_sampling_context {};
+// Include llama.cpp headers
+#include "llama.h"
+#include "common.h"
+#include "sampling.h"
 
 // Global state
 static llama_model* g_model = nullptr;
@@ -30,7 +25,10 @@ static llama_context* g_context = nullptr;
 static llama_sampling_context* g_sampling = nullptr;
 static std::mutex g_mutex;
 static bool g_should_stop = false;
-static std::string g_stream_buffer;
+static std::vector<llama_token> g_stream_tokens;
+static size_t g_stream_pos = 0;
+static llama_batch g_batch;
+static bool g_batch_initialized = false;
 
 extern "C" {
 
@@ -54,8 +52,6 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeInitModel(
     LOGI("Initializing model: %s", path);
     LOGI("Threads: %d, GPU layers: %d, Context: %d", n_threads, n_gpu_layers, context_size);
     
-    // TODO: Actual llama.cpp initialization
-    /*
     // Free existing model if any
     if (g_context) {
         llama_free(g_context);
@@ -65,19 +61,24 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeInitModel(
         llama_free_model(g_model);
         g_model = nullptr;
     }
+    if (g_batch_initialized) {
+        llama_batch_free(g_batch);
+        g_batch_initialized = false;
+    }
     
     // Initialize backend
     llama_backend_init();
     
-    // Load model
+    // Set up model parameters
     llama_model_params model_params = llama_model_default_params();
-    model_params.n_gpu_layers = n_gpu_layers;
+    model_params.n_gpu_layers = use_gpu ? n_gpu_layers : 0;
     model_params.use_mmap = true;
     model_params.use_mlock = false;
     
+    // Load model
     g_model = llama_load_model_from_file(path, model_params);
     if (!g_model) {
-        LOGE("Failed to load model");
+        LOGE("Failed to load model from: %s", path);
         env->ReleaseStringUTFChars(model_path, path);
         return JNI_FALSE;
     }
@@ -98,14 +99,13 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeInitModel(
         return JNI_FALSE;
     }
     
+    // Initialize batch
+    g_batch = llama_batch_init(batch_size, 0, 1);
+    g_batch_initialized = true;
+    
     LOGI("Model loaded successfully");
-    */
-    
-    // Mock implementation for now
-    g_model = (llama_model*)0x1;  // Non-null pointer
-    g_context = (llama_context*)0x1;
-    
-    LOGI("Mock: Model initialized (llama.cpp not yet integrated)");
+    LOGI("Vocab size: %d", llama_n_vocab(g_model));
+    LOGI("Context size: %d", llama_n_ctx(g_context));
     
     env->ReleaseStringUTFChars(model_path, path);
     return JNI_TRUE;
@@ -133,83 +133,109 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerate(
     const char* prompt_str = env->GetStringUTFChars(prompt, nullptr);
     LOGI("Generating with prompt: %.50s...", prompt_str);
     
-    // TODO: Actual llama.cpp generation
-    /*
     std::string prompt_text(prompt_str);
+    env->ReleaseStringUTFChars(prompt, prompt_str);
     
     // Tokenize prompt
-    std::vector<llama_token> tokens;
-    tokens.resize(prompt_text.length() + 1);
+    std::vector<llama_token> tokens_list;
+    tokens_list.resize(prompt_text.length() + 256);
+    
     int n_tokens = llama_tokenize(
         g_model,
         prompt_text.c_str(),
         prompt_text.length(),
-        tokens.data(),
-        tokens.size(),
-        true,  // add_bos
-        false  // special
+        tokens_list.data(),
+        tokens_list.size(),
+        true,   // add_bos
+        false   // special
     );
-    tokens.resize(n_tokens);
+    
+    if (n_tokens < 0) {
+        LOGE("Failed to tokenize prompt");
+        return nullptr;
+    }
+    
+    tokens_list.resize(n_tokens);
+    
+    // Clear KV cache
+    llama_kv_cache_clear(g_context);
     
     // Evaluate prompt
-    llama_batch batch = llama_batch_init(tokens.size(), 0, 1);
-    for (size_t i = 0; i < tokens.size(); i++) {
-        llama_batch_add(batch, tokens[i], i, {0}, false);
+    llama_batch_clear(g_batch);
+    for (size_t i = 0; i < tokens_list.size(); i++) {
+        llama_batch_add(g_batch, tokens_list[i], i, {0}, false);
     }
-    batch.logits[batch.n_tokens - 1] = true;
+    g_batch.logits[g_batch.n_tokens - 1] = true;
     
-    if (llama_decode(g_context, batch) != 0) {
+    if (llama_decode(g_context, g_batch) != 0) {
         LOGE("Failed to decode prompt");
-        llama_batch_free(batch);
-        env->ReleaseStringUTFChars(prompt, prompt_str);
+        return nullptr;
+    }
+    
+    // Prepare sampling params
+    llama_sampling_params sparams;
+    sparams.temp = temperature;
+    sparams.top_p = top_p;
+    sparams.top_k = top_k;
+    sparams.penalty_repeat = repeat_penalty;
+    sparams.penalty_last_n = 64;
+    
+    // Create sampling context
+    llama_sampling_context* sampling = llama_sampling_init(sparams);
+    if (!sampling) {
+        LOGE("Failed to create sampling context");
         return nullptr;
     }
     
     // Generate tokens
     std::string result;
     int n_generated = 0;
+    int n_cur = tokens_list.size();
+    
+    g_should_stop = false;
     
     for (int i = 0; i < max_tokens; i++) {
-        if (g_should_stop) break;
+        if (g_should_stop) {
+            LOGI("Generation stopped by user");
+            break;
+        }
         
         // Sample next token
-        llama_token new_token = llama_sampling_sample(g_sampling, g_context, nullptr);
+        llama_token new_token = llama_sampling_sample(sampling, g_context, nullptr);
+        
+        // Accept token
+        llama_sampling_accept(sampling, g_context, new_token, true);
         
         // Check for EOS
         if (llama_token_is_eog(g_model, new_token)) {
+            LOGI("EOS token reached");
             break;
         }
         
         // Convert token to text
-        char token_str[256];
-        int n = llama_token_to_piece(g_model, new_token, token_str, sizeof(token_str), false);
+        char token_str[256] = {0};
+        int n = llama_token_to_piece(g_model, new_token, token_str, sizeof(token_str) - 1, 0, false);
         if (n > 0) {
-            result.append(token_str, n);
+            token_str[n] = '\0';
+            result.append(token_str);
         }
         
         // Prepare for next iteration
-        llama_batch_clear(batch);
-        llama_batch_add(batch, new_token, tokens.size() + i, {0}, true);
+        llama_batch_clear(g_batch);
+        llama_batch_add(g_batch, new_token, n_cur, {0}, true);
+        n_cur++;
         
-        if (llama_decode(g_context, batch) != 0) {
+        if (llama_decode(g_context, g_batch) != 0) {
+            LOGE("Failed to decode token");
             break;
         }
         
         n_generated++;
     }
     
-    llama_batch_free(batch);
-    */
+    llama_sampling_free(sampling);
     
-    // Mock implementation
-    std::string result = "This is a mock response from flutter_llama_bridge. "
-                        "llama.cpp integration is not yet complete. "
-                        "Please add llama.cpp sources and rebuild.";
-    int n_generated = 10;
-    
-    LOGI("Mock: Generated response with %d tokens", n_generated);
-    
-    env->ReleaseStringUTFChars(prompt, prompt_str);
+    LOGI("Generated %d tokens", n_generated);
     
     // Create GenerationResult object
     jclass result_class = env->FindClass("net/nativemind/flutter_llama/FlutterLlamaPlugin$GenerationResult");
@@ -246,10 +272,92 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamInit(
     
     LOGI("Initializing stream generation");
     
-    g_should_stop = false;
-    g_stream_buffer = "Mock streaming response from flutter_llama bridge. ";
+    if (!g_model || !g_context) {
+        LOGE("Model not loaded");
+        return;
+    }
     
-    // TODO: Actual llama.cpp streaming initialization
+    g_should_stop = false;
+    g_stream_tokens.clear();
+    g_stream_pos = 0;
+    
+    const char* prompt_str = env->GetStringUTFChars(prompt, nullptr);
+    std::string prompt_text(prompt_str);
+    env->ReleaseStringUTFChars(prompt, prompt_str);
+    
+    // Tokenize prompt
+    std::vector<llama_token> prompt_tokens;
+    prompt_tokens.resize(prompt_text.length() + 256);
+    
+    int n_tokens = llama_tokenize(
+        g_model,
+        prompt_text.c_str(),
+        prompt_text.length(),
+        prompt_tokens.data(),
+        prompt_tokens.size(),
+        true,   // add_bos
+        false   // special
+    );
+    
+    if (n_tokens < 0) {
+        LOGE("Failed to tokenize prompt for streaming");
+        return;
+    }
+    
+    prompt_tokens.resize(n_tokens);
+    
+    // Clear KV cache
+    llama_kv_cache_clear(g_context);
+    
+    // Evaluate prompt
+    llama_batch_clear(g_batch);
+    for (size_t i = 0; i < prompt_tokens.size(); i++) {
+        llama_batch_add(g_batch, prompt_tokens[i], i, {0}, false);
+    }
+    g_batch.logits[g_batch.n_tokens - 1] = true;
+    
+    if (llama_decode(g_context, g_batch) != 0) {
+        LOGE("Failed to decode prompt for streaming");
+        return;
+    }
+    
+    // Prepare sampling
+    llama_sampling_params sparams;
+    sparams.temp = temperature;
+    sparams.top_p = top_p;
+    sparams.top_k = top_k;
+    sparams.penalty_repeat = repeat_penalty;
+    sparams.penalty_last_n = 64;
+    
+    if (g_sampling) {
+        llama_sampling_free(g_sampling);
+    }
+    g_sampling = llama_sampling_init(sparams);
+    
+    // Pre-generate all tokens
+    int n_cur = prompt_tokens.size();
+    for (int i = 0; i < max_tokens; i++) {
+        if (g_should_stop) break;
+        
+        llama_token new_token = llama_sampling_sample(g_sampling, g_context, nullptr);
+        llama_sampling_accept(g_sampling, g_context, new_token, true);
+        
+        if (llama_token_is_eog(g_model, new_token)) {
+            break;
+        }
+        
+        g_stream_tokens.push_back(new_token);
+        
+        llama_batch_clear(g_batch);
+        llama_batch_add(g_batch, new_token, n_cur, {0}, true);
+        n_cur++;
+        
+        if (llama_decode(g_context, g_batch) != 0) {
+            break;
+        }
+    }
+    
+    LOGI("Pre-generated %zu tokens for streaming", g_stream_tokens.size());
 }
 
 // Get next token in stream
@@ -260,17 +368,19 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamNext(
 ) {
     std::lock_guard<std::mutex> lock(g_mutex);
     
-    if (g_should_stop || g_stream_buffer.empty()) {
+    if (g_should_stop || g_stream_pos >= g_stream_tokens.size()) {
         return nullptr;
     }
     
-    // Mock: Return one character at a time
-    if (!g_stream_buffer.empty()) {
-        char c = g_stream_buffer[0];
-        g_stream_buffer.erase(0, 1);
-        
-        char token[2] = {c, '\0'};
-        return env->NewStringUTF(token);
+    llama_token token = g_stream_tokens[g_stream_pos++];
+    
+    // Convert token to text
+    char token_str[256] = {0};
+    int n = llama_token_to_piece(g_model, token, token_str, sizeof(token_str) - 1, 0, false);
+    
+    if (n > 0) {
+        token_str[n] = '\0';
+        return env->NewStringUTF(token_str);
     }
     
     return nullptr;
@@ -285,7 +395,13 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGenerateStreamEnd(
     std::lock_guard<std::mutex> lock(g_mutex);
     
     LOGI("Ending stream generation");
-    g_stream_buffer.clear();
+    g_stream_tokens.clear();
+    g_stream_pos = 0;
+    
+    if (g_sampling) {
+        llama_sampling_free(g_sampling);
+        g_sampling = nullptr;
+    }
 }
 
 // Get model information
@@ -296,21 +412,16 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeGetModelInfo(
 ) {
     std::lock_guard<std::mutex> lock(g_mutex);
     
-    if (!g_model) {
+    if (!g_model || !g_context) {
         return nullptr;
     }
     
-    // TODO: Actual model info
-    /*
-    int64_t n_params = llama_model_n_params(g_model);
-    int32_t n_layers = llama_model_n_layer(g_model);
-    int32_t context_size = llama_n_ctx(g_context);
-    */
+    jlong n_params = llama_model_n_params(g_model);
+    jint n_layers = llama_model_n_layer(g_model);
+    jint context_size = llama_n_ctx(g_context);
     
-    // Mock values
-    jlong n_params = 108000000LL;  // 108M parameters (braindler)
-    jint n_layers = 24;
-    jint context_size = 2048;
+    LOGI("Model info: params=%lld, layers=%d, context=%d", 
+         (long long)n_params, n_layers, context_size);
     
     // Create ModelInfo object
     jclass info_class = env->FindClass("net/nativemind/flutter_llama/FlutterLlamaPlugin$ModelInfo");
@@ -339,21 +450,29 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeFreeModel(
     
     LOGI("Freeing model");
     
-    // TODO: Actual cleanup
-    /*
+    if (g_sampling) {
+        llama_sampling_free(g_sampling);
+        g_sampling = nullptr;
+    }
+    
+    if (g_batch_initialized) {
+        llama_batch_free(g_batch);
+        g_batch_initialized = false;
+    }
+    
     if (g_context) {
         llama_free(g_context);
         g_context = nullptr;
     }
+    
     if (g_model) {
         llama_free_model(g_model);
         g_model = nullptr;
     }
-    llama_backend_free();
-    */
     
-    g_model = nullptr;
-    g_context = nullptr;
+    llama_backend_free();
+    
+    LOGI("Model freed successfully");
 }
 
 // Stop generation
@@ -369,4 +488,3 @@ Java_net_nativemind_flutter_1llama_FlutterLlamaPlugin_nativeStopGeneration(
 }
 
 } // extern "C"
-

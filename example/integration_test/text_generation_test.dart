@@ -13,7 +13,7 @@ void main() {
 
     setUpAll(() async {
       print('Setting up tests - downloading/loading model...');
-      
+
       // Download model if needed
       String? path = await ModelDownloader.getModelPath('braindler-q2_k');
       if (path == null) {
@@ -27,14 +27,14 @@ void main() {
           },
         );
       }
-      
+
       modelPath = path!;
       print('Model ready at: $modelPath');
     });
 
     setUp(() async {
       llama = FlutterLlama.instance;
-      
+
       // Load model if not already loaded
       if (!llama.isModelLoaded) {
         print('Loading model...');
@@ -44,7 +44,7 @@ void main() {
           contextSize: 2048,
           useGpu: true,
         );
-        
+
         final loaded = await llama.loadModel(config);
         expect(loaded, isTrue, reason: 'Model should load successfully');
       }
@@ -63,7 +63,7 @@ void main() {
 
     testWidgets('should generate simple response', (WidgetTester tester) async {
       print('Testing simple generation...');
-      
+
       final params = GenerationParams(
         prompt: 'Hello',
         maxTokens: 50,
@@ -71,7 +71,7 @@ void main() {
       );
 
       final response = await llama.generate(params);
-      
+
       print('Prompt: ${params.prompt}');
       print('Response: ${response.text}');
       print('Tokens: ${response.tokensGenerated}');
@@ -83,15 +83,17 @@ void main() {
       expect(response.generationTime, greaterThan(0));
     });
 
-    testWidgets('should generate with different temperatures', (WidgetTester tester) async {
+    testWidgets('should generate with different temperatures', (
+      WidgetTester tester,
+    ) async {
       print('Testing temperature variations...');
-      
+
       final prompt = 'The weather today is';
       final temperatures = [0.1, 0.5, 0.9];
 
       for (final temp in temperatures) {
         print('\\nTemperature: $temp');
-        
+
         final params = GenerationParams(
           prompt: prompt,
           maxTokens: 30,
@@ -99,21 +101,21 @@ void main() {
         );
 
         final response = await llama.generate(params);
-        
+
         print('Response: ${response.text}');
-        
+
         expect(response.text, isNotEmpty);
       }
     });
 
     testWidgets('should respect max tokens limit', (WidgetTester tester) async {
       print('Testing max tokens limit...');
-      
+
       final maxTokensList = [10, 50, 100];
 
       for (final maxTokens in maxTokensList) {
         print('\\nMax tokens: $maxTokens');
-        
+
         final params = GenerationParams(
           prompt: 'Write a story about',
           maxTokens: maxTokens,
@@ -121,17 +123,19 @@ void main() {
         );
 
         final response = await llama.generate(params);
-        
+
         print('Generated tokens: ${response.tokensGenerated}');
         print('Response length: ${response.text.length} chars');
-        
+
         expect(response.tokensGenerated, lessThanOrEqualTo(maxTokens));
       }
     });
 
-    testWidgets('should generate with different sampling parameters', (WidgetTester tester) async {
+    testWidgets('should generate with different sampling parameters', (
+      WidgetTester tester,
+    ) async {
       print('Testing different sampling parameters...');
-      
+
       final testCases = [
         {
           'name': 'High creativity',
@@ -168,21 +172,23 @@ void main() {
       for (final testCase in testCases) {
         print('\\n${testCase['name']}:');
         final params = testCase['params'] as GenerationParams;
-        
+
         final response = await llama.generate(params);
-        
+
         print('Response: ${response.text}');
-        print('Stats: ${response.tokensGenerated} tokens in ${response.generationTime}ms');
-        
+        print(
+          'Stats: ${response.tokensGenerated} tokens in ${response.generationTime}ms',
+        );
+
         expect(response.text, isNotEmpty);
       }
     });
 
     testWidgets('should handle repeat penalty', (WidgetTester tester) async {
       print('Testing repeat penalty...');
-      
+
       final prompt = 'The cat';
-      
+
       // Low repeat penalty (may repeat more)
       print('\\nWith low repeat penalty (1.0):');
       var params = GenerationParams(
@@ -202,39 +208,36 @@ void main() {
       );
       response = await llama.generate(params);
       print('Response: ${response.text}');
-      
+
       expect(response.text, isNotEmpty);
     });
 
-    testWidgets('should generate multiple responses in sequence', (WidgetTester tester) async {
+    testWidgets('should generate multiple responses in sequence', (
+      WidgetTester tester,
+    ) async {
       print('Testing multiple sequential generations...');
-      
-      final prompts = [
-        'Hello',
-        'What is AI?',
-        'Tell me a joke',
-      ];
+
+      final prompts = ['Hello', 'What is AI?', 'Tell me a joke'];
 
       for (int i = 0; i < prompts.length; i++) {
         print('\\nGeneration ${i + 1}/${prompts.length}:');
         print('Prompt: ${prompts[i]}');
-        
-        final params = GenerationParams(
-          prompt: prompts[i],
-          maxTokens: 50,
-        );
+
+        final params = GenerationParams(prompt: prompts[i], maxTokens: 50);
 
         final response = await llama.generate(params);
-        
+
         print('Response: ${response.text}');
-        
+
         expect(response.text, isNotEmpty);
       }
     });
 
-    testWidgets('should measure generation performance', (WidgetTester tester) async {
+    testWidgets('should measure generation performance', (
+      WidgetTester tester,
+    ) async {
       print('Testing generation performance...');
-      
+
       final params = GenerationParams(
         prompt: 'Write a short paragraph about artificial intelligence',
         maxTokens: 100,
@@ -257,13 +260,12 @@ void main() {
       expect(stopwatch.elapsedMilliseconds, greaterThan(0));
     });
 
-    testWidgets('should handle empty prompt gracefully', (WidgetTester tester) async {
+    testWidgets('should handle empty prompt gracefully', (
+      WidgetTester tester,
+    ) async {
       print('Testing empty prompt...');
-      
-      final params = GenerationParams(
-        prompt: '',
-        maxTokens: 10,
-      );
+
+      final params = GenerationParams(prompt: '', maxTokens: 10);
 
       try {
         final response = await llama.generate(params);
@@ -278,13 +280,10 @@ void main() {
 
     testWidgets('should handle very long prompts', (WidgetTester tester) async {
       print('Testing long prompt...');
-      
+
       final longPrompt = 'This is a very long prompt. ' * 50; // Repeat 50 times
-      
-      final params = GenerationParams(
-        prompt: longPrompt,
-        maxTokens: 20,
-      );
+
+      final params = GenerationParams(prompt: longPrompt, maxTokens: 20);
 
       try {
         final response = await llama.generate(params);
@@ -297,9 +296,11 @@ void main() {
       }
     });
 
-    testWidgets('should compare generation with different quantizations', (WidgetTester tester) async {
+    testWidgets('should compare generation with different quantizations', (
+      WidgetTester tester,
+    ) async {
       print('Testing different model quantizations...');
-      
+
       // This test compares responses from different model versions
       final modelsToTest = ['braindler-q2_k', 'braindler-q4_k_s'];
       final prompt = 'Hello, how are you?';
@@ -307,14 +308,14 @@ void main() {
 
       for (final modelName in modelsToTest) {
         String? path = await ModelDownloader.getModelPath(modelName);
-        
+
         if (path == null) {
           print('$modelName not downloaded, skipping...');
           continue;
         }
 
         print('\\nTesting with $modelName...');
-        
+
         // Unload current model
         if (llama.isModelLoaded) {
           await llama.unloadModel();
@@ -326,7 +327,7 @@ void main() {
           nThreads: 4,
           contextSize: 2048,
         );
-        
+
         final loaded = await llama.loadModel(config);
         if (!loaded) {
           print('Failed to load $modelName');
@@ -342,9 +343,11 @@ void main() {
 
         final response = await llama.generate(params);
         responses[modelName] = response;
-        
+
         print('Response: ${response.text}');
-        print('Speed: ${response.tokensPerSecond.toStringAsFixed(2)} tokens/sec');
+        print(
+          'Speed: ${response.tokensPerSecond.toStringAsFixed(2)} tokens/sec',
+        );
       }
 
       print('\\nComparison complete. Tested ${responses.length} models.');
@@ -352,4 +355,3 @@ void main() {
     });
   });
 }
-

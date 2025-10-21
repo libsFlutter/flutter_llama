@@ -178,7 +178,7 @@ void main() {
               expect(args['prompt'], 'Hello');
               expect(args['temperature'], 0.8);
               expect(args['maxTokens'], 512);
-              
+
               return {
                 'text': 'Hello! How can I help you?',
                 'tokensGenerated': 6,
@@ -213,7 +213,7 @@ void main() {
               expect(args['topK'], 50);
               expect(args['maxTokens'], 256);
               expect(args['repeatPenalty'], 1.2);
-              
+
               return {
                 'text': 'Generated response',
                 'tokensGenerated': 10,
@@ -251,7 +251,7 @@ void main() {
             return null;
           },
         );
-        
+
         await newLlama.unloadModel();
 
         expect(
@@ -357,7 +357,7 @@ void main() {
     group('Stop Generation', () {
       test('should call stopGeneration method', () async {
         bool stopCalled = false;
-        
+
         TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
             .setMockMethodCallHandler(
           channel,
@@ -468,4 +468,3 @@ void main() {
     });
   });
 }
-

@@ -14,14 +14,14 @@ class ModelTestScreen extends StatefulWidget {
 class _ModelTestScreenState extends State<ModelTestScreen> {
   final FlutterLlama _llama = FlutterLlama.instance;
   final TextEditingController _promptController = TextEditingController();
-  
+
   String? _selectedModel;
   bool _isDownloading = false;
   bool _isGenerating = false;
   double _downloadProgress = 0.0;
   String _output = '';
   String _statusMessage = 'Выберите модель для начала';
-  
+
   final List<String> _logs = [];
 
   @override
@@ -40,7 +40,7 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
     _addLog('Загрузка списка доступных моделей...');
     final downloaded = await ModelDownloader.getDownloadedModels();
     setState(() {
-      _statusMessage = downloaded.isEmpty 
+      _statusMessage = downloaded.isEmpty
           ? 'Нет загруженных моделей. Загрузите модель для начала.'
           : 'Найдено ${downloaded.length} загруженных моделей';
     });
@@ -66,7 +66,7 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
 
     try {
       _addLog('Начинается загрузка $modelName');
-      
+
       final modelPath = await ModelDownloader.downloadModel(
         modelName,
         onProgress: (progress) {
@@ -77,7 +77,7 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
       );
 
       _addLog('Модель загружена: $modelPath');
-      
+
       setState(() {
         _selectedModel = modelPath;
         _statusMessage = 'Модель загружена успешно';
@@ -120,7 +120,7 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
         _addLog('Модель загружена успешно');
         final info = await _llama.getModelInfo();
         _addLog('Информация о модели: $info');
-        
+
         setState(() {
           _statusMessage = 'Модель готова к генерации';
         });
@@ -141,9 +141,9 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
   Future<void> _generate() async {
     if (!_llama.isModelLoaded) {
       _addLog('Модель не загружена');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Сначала загрузите модель')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Сначала загрузите модель')));
       return;
     }
 
@@ -161,7 +161,7 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
 
     try {
       _addLog('Начало генерации для промпта: "$prompt"');
-      
+
       final params = GenerationParams(
         prompt: prompt,
         maxTokens: 100,
@@ -178,7 +178,8 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
 
       setState(() {
         _output = response.text;
-        _statusMessage = 'Готово (${response.tokensGenerated} токенов, ${stopwatch.elapsedMilliseconds}ms)';
+        _statusMessage =
+            'Готово (${response.tokensGenerated} токенов, ${stopwatch.elapsedMilliseconds}ms)';
         _isGenerating = false;
       });
     } catch (e) {
@@ -193,9 +194,9 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
   Future<void> _generateStream() async {
     if (!_llama.isModelLoaded) {
       _addLog('Модель не загружена');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Сначала загрузите модель')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Сначала загрузите модель')));
       return;
     }
 
@@ -213,7 +214,7 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
 
     try {
       _addLog('Начало streaming генерации для: "$prompt"');
-      
+
       final params = GenerationParams(
         prompt: prompt,
         maxTokens: 100,
@@ -231,7 +232,9 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
       }
 
       stopwatch.stop();
-      _addLog('Streaming завершен: $tokenCount токенов за ${stopwatch.elapsedMilliseconds}ms');
+      _addLog(
+        'Streaming завершен: $tokenCount токенов за ${stopwatch.elapsedMilliseconds}ms',
+      );
 
       setState(() {
         _statusMessage = 'Готово ($tokenCount токенов)';
@@ -275,7 +278,9 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
             child: Row(
               children: [
                 Icon(
-                  _llama.isModelLoaded ? Icons.check_circle : Icons.circle_outlined,
+                  _llama.isModelLoaded
+                      ? Icons.check_circle
+                      : Icons.circle_outlined,
                   color: _llama.isModelLoaded ? Colors.green : Colors.grey,
                 ),
                 const SizedBox(width: 8),
@@ -295,20 +300,29 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Доступные модели:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Доступные модели:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: ModelDownloader.modelUrls.keys.map((modelName) {
-                    final info = ModelDownloader.getAvailableModels()[modelName]!;
+                    final info =
+                        ModelDownloader.getAvailableModels()[modelName]!;
                     return ElevatedButton(
-                      onPressed: _isDownloading ? null : () => _downloadModel(modelName),
+                      onPressed: _isDownloading
+                          ? null
+                          : () => _downloadModel(modelName),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(info.quantization),
-                          Text(info.sizeFormatted, style: const TextStyle(fontSize: 10)),
+                          Text(
+                            info.sizeFormatted,
+                            style: const TextStyle(fontSize: 10),
+                          ),
                         ],
                       ),
                     );
@@ -344,7 +358,9 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: _isGenerating || !_llama.isModelLoaded ? null : _generate,
+                        onPressed: _isGenerating || !_llama.isModelLoaded
+                            ? null
+                            : _generate,
                         icon: const Icon(Icons.play_arrow),
                         label: const Text('Generate'),
                       ),
@@ -352,7 +368,9 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: _isGenerating || !_llama.isModelLoaded ? null : _generateStream,
+                        onPressed: _isGenerating || !_llama.isModelLoaded
+                            ? null
+                            : _generateStream,
                         icon: const Icon(Icons.stream),
                         label: const Text('Stream'),
                       ),
@@ -383,7 +401,11 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
                         // Output tab
                         SingleChildScrollView(
                           padding: const EdgeInsets.all(12),
-                          child: Text(_output.isEmpty ? 'Результат появится здесь...' : _output),
+                          child: Text(
+                            _output.isEmpty
+                                ? 'Результат появится здесь...'
+                                : _output,
+                          ),
                         ),
                         // Logs tab
                         ListView.builder(
@@ -392,7 +414,10 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
                           itemBuilder: (context, index) {
                             return Text(
                               _logs[index],
-                              style: const TextStyle(fontFamily: 'monospace', fontSize: 11),
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 11,
+                              ),
                             );
                           },
                         ),
@@ -408,4 +433,3 @@ class _ModelTestScreenState extends State<ModelTestScreen> {
     );
   }
 }
-

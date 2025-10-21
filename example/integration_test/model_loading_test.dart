@@ -25,12 +25,14 @@ void main() {
       }
     });
 
-    testWidgets('should download and load q2_k model', (WidgetTester tester) async {
+    testWidgets('should download and load q2_k model', (
+      WidgetTester tester,
+    ) async {
       print('Starting model download test...');
-      
+
       // Download model if not already present
       String? modelPath = await ModelDownloader.getModelPath('braindler-q2_k');
-      
+
       if (modelPath == null) {
         print('Model not found, downloading...');
         modelPath = await ModelDownloader.downloadModel(
@@ -57,43 +59,42 @@ void main() {
       );
 
       final result = await llama.loadModel(config);
-      
+
       expect(result, isTrue);
       expect(llama.isModelLoaded, isTrue);
       expect(llama.modelPath, modelPath);
-      
+
       print('Model loaded successfully!');
     });
 
     testWidgets('should load model and get info', (WidgetTester tester) async {
       print('Testing model info...');
-      
+
       String? modelPath = await ModelDownloader.getModelPath('braindler-q2_k');
       if (modelPath == null) {
         modelPath = await ModelDownloader.downloadModel('braindler-q2_k');
       }
 
-      final config = LlamaConfig(
-        modelPath: modelPath!,
-        verbose: true,
-      );
+      final config = LlamaConfig(modelPath: modelPath!, verbose: true);
 
       await llama.loadModel(config);
-      
+
       final info = await llama.getModelInfo();
-      
+
       expect(info, isNotNull);
       print('Model info: $info');
-      
+
       // Verify info contains expected fields
       if (info != null) {
         expect(info.containsKey('modelPath') || info.isNotEmpty, isTrue);
       }
     });
 
-    testWidgets('should handle multiple load/unload cycles', (WidgetTester tester) async {
+    testWidgets('should handle multiple load/unload cycles', (
+      WidgetTester tester,
+    ) async {
       print('Testing multiple load/unload cycles...');
-      
+
       String? modelPath = await ModelDownloader.getModelPath('braindler-q2_k');
       if (modelPath == null) {
         modelPath = await ModelDownloader.downloadModel('braindler-q2_k');
@@ -112,28 +113,30 @@ void main() {
         await llama.unloadModel();
         expect(llama.isModelLoaded, isFalse);
       }
-      
+
       print('Multiple cycles completed successfully!');
     });
 
-    testWidgets('should fail gracefully with invalid model path', (WidgetTester tester) async {
+    testWidgets('should fail gracefully with invalid model path', (
+      WidgetTester tester,
+    ) async {
       print('Testing invalid model path...');
-      
-      final config = LlamaConfig(
-        modelPath: '/invalid/path/to/model.gguf',
-      );
+
+      final config = LlamaConfig(modelPath: '/invalid/path/to/model.gguf');
 
       final result = await llama.loadModel(config);
-      
+
       expect(result, isFalse);
       expect(llama.isModelLoaded, isFalse);
-      
+
       print('Invalid path handled correctly!');
     });
 
-    testWidgets('should load model with different configurations', (WidgetTester tester) async {
+    testWidgets('should load model with different configurations', (
+      WidgetTester tester,
+    ) async {
       print('Testing different configurations...');
-      
+
       String? modelPath = await ModelDownloader.getModelPath('braindler-q2_k');
       if (modelPath == null) {
         modelPath = await ModelDownloader.downloadModel('braindler-q2_k');
@@ -146,7 +149,7 @@ void main() {
         nThreads: 2,
         contextSize: 512,
       );
-      
+
       var result = await llama.loadModel(config);
       expect(result, isTrue);
       await llama.unloadModel();
@@ -162,10 +165,10 @@ void main() {
         useGpu: true,
         verbose: true,
       );
-      
+
       result = await llama.loadModel(config);
       expect(result, isTrue);
-      
+
       print('Different configurations tested successfully!');
     });
   });
@@ -173,31 +176,35 @@ void main() {
   group('Model Downloader Tests', () {
     testWidgets('should list available models', (WidgetTester tester) async {
       final models = ModelDownloader.getAvailableModels();
-      
+
       expect(models.isNotEmpty, isTrue);
       expect(models.containsKey('braindler-q2_k'), isTrue);
       expect(models.containsKey('braindler-q4_k_s'), isTrue);
-      
+
       print('Available models:');
       for (final entry in models.entries) {
-        print('  ${entry.key}: ${entry.value.sizeFormatted} (${entry.value.quantization})');
+        print(
+          '  ${entry.key}: ${entry.value.sizeFormatted} (${entry.value.quantization})',
+        );
       }
     });
 
-    testWidgets('should check for downloaded models', (WidgetTester tester) async {
+    testWidgets('should check for downloaded models', (
+      WidgetTester tester,
+    ) async {
       final downloaded = await ModelDownloader.getDownloadedModels();
-      
+
       print('Downloaded models: ${downloaded.length}');
       for (final model in downloaded) {
         print('  - $model');
       }
-      
+
       expect(downloaded, isA<List<String>>());
     });
 
     testWidgets('should get model path if exists', (WidgetTester tester) async {
       final path = await ModelDownloader.getModelPath('braindler-q2_k');
-      
+
       if (path != null) {
         print('Model path: $path');
         expect(File(path).existsSync(), isTrue);
@@ -206,9 +213,11 @@ void main() {
       }
     });
 
-    testWidgets('should download small model with progress tracking', (WidgetTester tester) async {
+    testWidgets('should download small model with progress tracking', (
+      WidgetTester tester,
+    ) async {
       print('Testing download with progress tracking...');
-      
+
       // Check if already downloaded
       final existingPath = await ModelDownloader.getModelPath('braindler-q2_k');
       if (existingPath != null) {
@@ -217,7 +226,7 @@ void main() {
       }
 
       final progressUpdates = <double>[];
-      
+
       final modelPath = await ModelDownloader.downloadModel(
         'braindler-q2_k',
         onProgress: (progress) {
@@ -232,9 +241,8 @@ void main() {
       expect(File(modelPath).existsSync(), isTrue);
       expect(progressUpdates.isNotEmpty, isTrue);
       expect(progressUpdates.last, greaterThanOrEqualTo(1.0));
-      
+
       print('Download completed successfully!');
     });
   });
 }
-

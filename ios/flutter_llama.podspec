@@ -1,51 +1,65 @@
 #
-# To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint flutter_llama.podspec` to validate before publishing.
+# Flutter Llama Podspec - iOS plugin configuration with llama.cpp
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_llama'
-  s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.version          = '0.1.0'
+  s.summary          = 'Flutter plugin for LLM inference with llama.cpp and GGUF models'
   s.description      = <<-DESC
-A new Flutter plugin project.
+Flutter plugin for running LLM inference with llama.cpp and GGUF models on iOS.
+Supports GPU acceleration via Metal and CPU optimization via Accelerate framework.
                        DESC
-  s.homepage         = 'http://example.com'
+  s.homepage         = 'https://github.com/nativemind/flutter_llama'
   s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.author           = { 'NativeMind' => 'licensing@nativemind.net' }
   s.source           = { :path => '.' }
-  s.source_files = 'Classes/**/*.{swift,h,m,mm,cpp}'
+  
+  # Source files
+  s.source_files = [
+    'Classes/**/*.{swift,h,m,mm}',
+    '../llama.cpp/*.{c,cpp,h}',
+    '../llama.cpp/common/*.{c,cpp,h}',
+    '../llama.cpp/ggml/src/*.{c,cpp,h}',
+    '../llama.cpp/ggml/src/ggml-metal.m'
+  ]
+  
+  # Exclude unnecessary files
+  s.exclude_files = [
+    '../llama.cpp/examples/**/*',
+    '../llama.cpp/tests/**/*',
+    '../llama.cpp/ggml/src/ggml-cuda/**/*',
+    '../llama.cpp/ggml/src/ggml-sycl/**/*',
+    '../llama.cpp/ggml/src/ggml-vulkan/**/*',
+    '../llama.cpp/ggml/src/ggml-kompute/**/*'
+  ]
+  
   s.public_header_files = 'Classes/**/*.h'
+  
+  # Resource bundle for Metal shaders
+  s.resource_bundles = {
+    'flutter_llama_resources' => ['../llama.cpp/ggml/src/ggml-metal.metal']
+  }
   
   # C++ settings
   s.library = 'c++'
   s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+    'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386',
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     'CLANG_CXX_LIBRARY' => 'libc++',
     'GCC_ENABLE_CPP_EXCEPTIONS' => 'YES',
     'GCC_ENABLE_CPP_RTTI' => 'YES',
-    'OTHER_CPLUSPLUSFLAGS' => '-DGGML_USE_ACCELERATE -DGGML_USE_METAL'
+    'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
+    'GCC_WARN_INHIBIT_ALL_WARNINGS' => 'YES',
+    'OTHER_CFLAGS' => '-DGGML_USE_ACCELERATE -DGGML_USE_METAL -DGGML_METAL_EMBED_LIBRARY -O3 -ffast-math',
+    'OTHER_CPLUSPLUSFLAGS' => '-DGGML_USE_ACCELERATE -DGGML_USE_METAL -DGGML_METAL_EMBED_LIBRARY -O3 -ffast-math',
+    'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/../llama.cpp" "${PODS_TARGET_SRCROOT}/../llama.cpp/common" "${PODS_TARGET_SRCROOT}/../llama.cpp/ggml/include" "${PODS_TARGET_SRCROOT}/../llama.cpp/ggml/src"'
   }
   
-  # Metal framework for GPU acceleration
-  s.frameworks = 'Metal', 'MetalKit', 'Accelerate'
+  # Frameworks for GPU acceleration and optimization
+  s.frameworks = 'Metal', 'MetalKit', 'MetalPerformanceShaders', 'Accelerate'
   
-  # TODO: Add llama.cpp source files or precompiled library
-  # Option 1: Add as source files
-  # s.source_files = ['Classes/**/*.{swift,h,m,mm,cpp}', 'llama.cpp/**/*.{c,cpp,h}']
-  # s.exclude_files = 'llama.cpp/examples/**/*'
-  # 
-  # Option 2: Link precompiled library
-  # s.vendored_libraries = 'Libraries/libllama.a'
   s.dependency 'Flutter'
   s.platform = :ios, '13.0'
-
-  # Flutter.framework does not contain a i386 slice.
-  s.pod_target_xcconfig = { 'DEFINES_MODULE' => 'YES', 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'i386' }
   s.swift_version = '5.0'
-
-  # If your plugin requires a privacy manifest, for example if it uses any
-  # required reason APIs, update the PrivacyInfo.xcprivacy file to describe your
-  # plugin's privacy impact, and then uncomment this line. For more information,
-  # see https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
-  # s.resource_bundles = {'flutter_llama_privacy' => ['Resources/PrivacyInfo.xcprivacy']}
 end
