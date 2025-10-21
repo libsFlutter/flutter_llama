@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.1] - 2025-10-21
+
+### Added
+- Comprehensive test suite with 71 unit tests
+- Integration tests with Ollama model support
+- Dynamic GGUF model loading utilities
+- GitHub Actions CI/CD workflow
+- Makefile for common development tasks
+- Extensive testing documentation
+
+### Improved
+- Added macOS platform support
+- Enhanced documentation with testing guides
+- Better error handling in tests
+- Code formatting and linting
+
 ## [0.1.0] - 2025-10-21
 
 ### Added

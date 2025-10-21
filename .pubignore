@@ -1,0 +1,48 @@
+# Exclude test model files (too large for pub.dev)
+example/assets/models/
+
+# Exclude large documentation files
+**/FINAL_*.md
+**/BUILD_*.md
+**/HARDWARE_*.md
+**/IMPLEMENTATION_*.md
+**/INTEGRATION_*.md
+**/LLAMA_CPP_*.md
+**/TEST_*.md
+**/TESTING.md
+**/DEMO_*.md
+**/QUICK_*.md
+**/DEVICES_*.md
+
+# Exclude build artifacts
+example/build/
+example/.dart_tool/
+example/android/.gradle/
+example/ios/Pods/
+example/ios/.symlinks/
+example/macos/Pods/
+example/macos/.symlinks/
+
+# Exclude test files from example
+example/integration_test/
+example/test/
+
+# Exclude git files
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# Exclude IDE files
+.vscode/
+.idea/
+*.iml
+
+# Exclude CI/CD files
+Makefile
+run_tests.sh
+run_demo.sh
+
+# Keep minimal documentation
+# README.md and CHANGELOG.md will be included
+
