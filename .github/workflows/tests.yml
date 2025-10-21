@@ -1,0 +1,154 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          cd example && flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run unit tests
+        run: flutter test --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+
+  integration-tests-android:
+    name: Integration Tests (Android)
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Ollama
+        run: |
+          brew install ollama
+          ollama serve &
+          sleep 5
+
+      - name: Pull test model
+        run: ollama pull nativemind/braindler:q2_k
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          cd example && flutter pub get
+
+      - name: Setup Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          profile: Nexus 6
+          script: |
+            cd example
+            flutter test integration_test/plugin_integration_test.dart
+            flutter test integration_test/ollama_integration_test.dart
+
+  integration-tests-ios:
+    name: Integration Tests (iOS)
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Ollama
+        run: |
+          brew install ollama
+          ollama serve &
+          sleep 5
+
+      - name: Pull test model
+        run: ollama pull nativemind/braindler:q2_k
+
+      - name: Get dependencies
+        run: |
+          flutter pub get
+          cd example && flutter pub get
+
+      - name: Start iOS Simulator
+        run: |
+          xcrun simctl boot "iPhone 15 Pro" || true
+          xcrun simctl list devices
+
+      - name: Run integration tests
+        run: |
+          cd example
+          flutter test integration_test/plugin_integration_test.dart -d iPhone
+          flutter test integration_test/ollama_integration_test.dart -d iPhone
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Check formatting
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze code
+        run: flutter analyze --fatal-infos
+
+      - name: Check for outdated dependencies
+        run: flutter pub outdated
+

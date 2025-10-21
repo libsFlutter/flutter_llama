@@ -29,6 +29,11 @@ class FlutterLlamaPlugin : FlutterPlugin, MethodCallHandler, EventChannel.Stream
 
         init {
             try {
+                // Load llama.cpp libraries in correct order
+                System.loadLibrary("c++_shared")
+                System.loadLibrary("ggml")
+                System.loadLibrary("ggml-base")
+                System.loadLibrary("ggml-cpu")
                 System.loadLibrary("llama")
                 System.loadLibrary("flutter_llama_bridge")
                 Log.d(TAG, "Native libraries loaded successfully")
