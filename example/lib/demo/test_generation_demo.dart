@@ -207,3 +207,8 @@ String _wrapText(String text, int width) {
 
   return lines.join(' │\n│ ');
 }
+
+
+
+
+

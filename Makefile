@@ -143,3 +143,8 @@ stats: ## Show project statistics
 ci: clean install lint test coverage ## Run full CI pipeline locally
 	@echo "✅ CI pipeline completed successfully!"
 
+
+
+
+
+

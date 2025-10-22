@@ -1,6 +1,63 @@
 import FlutterMacOS
 import Foundation
 
+// C Bridge function declarations matching llama_cpp_bridge.mm
+@_silgen_name("llama_init_model")
+func llama_init_model(
+    _ modelPath: UnsafePointer<CChar>,
+    _ nThreads: Int32,
+    _ nGpuLayers: Int32,
+    _ ctxSize: Int32,
+    _ batchSize: Int32,
+    _ useGpu: Bool,
+    _ verbose: Bool
+) -> Bool
+
+@_silgen_name("llama_generate")
+func llama_generate(
+    _ prompt: UnsafePointer<CChar>,
+    _ temperature: Float,
+    _ topP: Float,
+    _ topK: Int32,
+    _ maxTokens: Int32,
+    _ repeatPenalty: Float,
+    _ output: UnsafeMutablePointer<CChar>,
+    _ outputSize: Int32,
+    _ tokensGenerated: UnsafeMutablePointer<Int32>
+) -> Bool
+
+@_silgen_name("llama_generate_stream_init")
+func llama_generate_stream_init(
+    _ prompt: UnsafePointer<CChar>,
+    _ temperature: Float,
+    _ topP: Float,
+    _ topK: Int32,
+    _ maxTokens: Int32,
+    _ repeatPenalty: Float
+)
+
+@_silgen_name("llama_generate_stream_next")
+func llama_generate_stream_next(
+    _ output: UnsafeMutablePointer<CChar>,
+    _ outputSize: Int32
+) -> Bool
+
+@_silgen_name("llama_generate_stream_end")
+func llama_generate_stream_end()
+
+@_silgen_name("llama_get_model_info")
+func llama_get_model_info(
+    _ nParams: UnsafeMutablePointer<Int64>,
+    _ nLayers: UnsafeMutablePointer<Int32>,
+    _ contextSize: UnsafeMutablePointer<Int32>
+)
+
+@_silgen_name("llama_bridge_free_model")
+func llama_bridge_free_model()
+
+@_silgen_name("llama_stop_generation")
+func llama_stop_generation()
+
 /**
  * FlutterLlamaPlugin - плагин для работы с llama.cpp моделями на macOS
  * 
@@ -107,15 +164,17 @@ public class FlutterLlamaPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
             self.modelPath = modelPath
             
             // Initialize model through llama.cpp C++ bridge
-            let success = llama_init_model(
-                modelPath,
-                Int32(nThreads),
-                Int32(nGpuLayers),
-                Int32(contextSize),
-                Int32(batchSize),
-                useGpu,
-                verbose
-            )
+            let success = modelPath.withCString { modelPathPtr in
+                llama_init_model(
+                    modelPathPtr,
+                    Int32(nThreads),
+                    Int32(nGpuLayers),
+                    Int32(contextSize),
+                    Int32(batchSize),
+                    useGpu,
+                    verbose
+                )
+            }
             
             self.modelLoaded = success
             
@@ -147,8 +206,7 @@ public class FlutterLlamaPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
             return
         }
         
-        queue.async { [weak self] in
-            guard let self = self else { return }
+        queue.async {
             guard let args = call.arguments as? [String: Any],
                   let prompt = args["prompt"] as? String else {
                 DispatchQueue.main.async {
@@ -174,17 +232,19 @@ public class FlutterLlamaPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
             var outputBuffer = [CChar](repeating: 0, count: 16384)
             var tokensGenerated: Int32 = 0
             
-            let success = llama_generate(
-                prompt,
-                Float(temperature),
-                Float(topP),
-                Int32(topK),
-                Int32(maxTokens),
-                Float(repeatPenalty),
-                &outputBuffer,
-                Int32(outputBuffer.count),
-                &tokensGenerated
-            )
+            let success = prompt.withCString { promptPtr in
+                llama_generate(
+                    promptPtr,
+                    Float(temperature),
+                    Float(topP),
+                    Int32(topK),
+                    Int32(maxTokens),
+                    Float(repeatPenalty),
+                    &outputBuffer,
+                    Int32(outputBuffer.count),
+                    &tokensGenerated
+                )
+            }
             
             let generationTime = Int(Date().timeIntervalSince(startTime) * 1000)
             
@@ -253,14 +313,16 @@ public class FlutterLlamaPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
             self.shouldStop = false
             
             // Initialize streaming generation
-            llama_generate_stream_init(
-                prompt,
-                Float(temperature),
-                Float(topP),
-                Int32(topK),
-                Int32(maxTokens),
-                Float(repeatPenalty)
-            )
+            prompt.withCString { promptPtr in
+                llama_generate_stream_init(
+                    promptPtr,
+                    Float(temperature),
+                    Float(topP),
+                    Int32(topK),
+                    Int32(maxTokens),
+                    Float(repeatPenalty)
+                )
+            }
             
             // Stream tokens one by one
             var tokenBuffer = [CChar](repeating: 0, count: 256)
@@ -332,60 +394,3 @@ public class FlutterLlamaPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
 }
 
 // MARK: - C++ Bridge Function Declarations
-
-// These functions will be implemented in llama_cpp_bridge.cpp
-@_silgen_name("llama_init_model")
-func llama_init_model(
-    _ modelPath: String,
-    _ nThreads: Int32,
-    _ nGpuLayers: Int32,
-    _ contextSize: Int32,
-    _ batchSize: Int32,
-    _ useGpu: Bool,
-    _ verbose: Bool
-) -> Bool
-
-@_silgen_name("llama_generate")
-func llama_generate(
-    _ prompt: String,
-    _ temperature: Float,
-    _ topP: Float,
-    _ topK: Int32,
-    _ maxTokens: Int32,
-    _ repeatPenalty: Float,
-    _ output: UnsafeMutablePointer<CChar>,
-    _ outputSize: Int32,
-    _ tokensGenerated: UnsafeMutablePointer<Int32>
-) -> Bool
-
-@_silgen_name("llama_generate_stream_init")
-func llama_generate_stream_init(
-    _ prompt: String,
-    _ temperature: Float,
-    _ topP: Float,
-    _ topK: Int32,
-    _ maxTokens: Int32,
-    _ repeatPenalty: Float
-)
-
-@_silgen_name("llama_generate_stream_next")
-func llama_generate_stream_next(
-    _ output: UnsafeMutablePointer<CChar>,
-    _ outputSize: Int32
-) -> Bool
-
-@_silgen_name("llama_generate_stream_end")
-func llama_generate_stream_end()
-
-@_silgen_name("llama_get_model_info")
-func llama_get_model_info(
-    _ nParams: UnsafeMutablePointer<Int64>,
-    _ nLayers: UnsafeMutablePointer<Int32>,
-    _ contextSize: UnsafeMutablePointer<Int32>
-)
-
-@_silgen_name("llama_free_model")
-func llama_free_model()
-
-@_silgen_name("llama_stop_generation")
-func llama_stop_generation()

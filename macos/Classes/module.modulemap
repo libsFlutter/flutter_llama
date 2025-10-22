@@ -1,6 +1,0 @@
-module flutter_llama_c {
-    umbrella header "llama_cpp_bridge.h"
-    export *
-    module * { export * }
-}
-

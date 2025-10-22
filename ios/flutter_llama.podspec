@@ -3,7 +3,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'flutter_llama'
-  s.version          = '0.1.0'
+  s.version          = '1.0.0'
   s.summary          = 'Flutter plugin for LLM inference with llama.cpp and GGUF models'
   s.description      = <<-DESC
 Flutter plugin for running LLM inference with llama.cpp and GGUF models on iOS.
