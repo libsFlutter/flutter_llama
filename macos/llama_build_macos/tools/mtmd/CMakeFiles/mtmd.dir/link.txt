@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmtmd.a CMakeFiles/mtmd.dir/mtmd.cpp.o "CMakeFiles/mtmd.dir/mtmd-audio.cpp.o" CMakeFiles/mtmd.dir/clip.cpp.o "CMakeFiles/mtmd.dir/mtmd-helper.cpp.o"
-/usr/bin/ranlib libmtmd.a

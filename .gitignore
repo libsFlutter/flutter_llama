@@ -31,3 +31,151 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 /build/
 /coverage/
+
+# Flutter plugins
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Android related
+**/android/**/gradle-wrapper.jar
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+
+# iOS/XCode related
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/profile
+**/ios/**/xcuserdata
+**/ios/.generated/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral
+**/macos/Pods/
+**/macos/.symlinks/
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/macos/Flutter/Flutter-Profile.xcconfig
+**/macos/**/xcuserdata/
+
+# Build artifacts
+**/build/
+**/llama_build_*/
+**/macos_libs/*.a
+**/macos_libs/*.dylib
+
+# Python virtual environments
+venv/
+venv_convert/
+env/
+ENV/
+.venv
+*.egg-info/
+__pycache__/
+dist/
+*.egg
+
+# Models and temporary files
+models_temp/
+*.gguf
+!example/assets/models/*.gguf
+*.bin
+*.pth
+*.safetensors
+
+# Generated documentation
+**/FINAL_*.md
+**/SUCCESS_REPORT.md
+**/IMPLEMENTATION_*.md
+**/TEST_*.md
+**/MACOS_STATUS.md
+
+# llama.cpp build artifacts
+llama.cpp/build/
+llama.cpp/*.o
+llama.cpp/*.a
+llama.cpp/*.so
+llama.cpp/*.dylib
+llama.cpp/models/*.gguf
+llama.cpp/models/*.bin
+
+# Xcode
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/
+
+# Android Studio
+.gradle/
+local.properties
+.classpath
+.project
+.settings/
+*.log
+
+# User-specific files
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+
+# Test and coverage
+coverage/
+test/.test_coverage.dart
+.test_coverage/
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Backup files
+*~
+*.bak
+*.swp
+*.swo
