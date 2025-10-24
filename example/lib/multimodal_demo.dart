@@ -24,11 +24,12 @@ class _MultimodalDemoState extends State<MultimodalDemo> {
     try {
       final input = MultimodalInput.text('Что такое бхакти-йога?');
       final params = GenerationParams(maxTokens: 200, temperature: 0.7);
-      
+
       final response = await _llama.generateMultimodal(input, params);
-      
+
       setState(() {
-        _output = 'Текстовая генерация:\n\n${response.text}\n\n'
+        _output =
+            'Текстовая генерация:\n\n${response.text}\n\n'
             'Токенов: ${response.tokensGenerated}\n'
             'Время: ${response.generationTimeMs}ms\n'
             'Скорость: ${response.tokensPerSecond.toStringAsFixed(2)} токенов/сек';
@@ -56,11 +57,12 @@ class _MultimodalDemoState extends State<MultimodalDemo> {
         text: 'Опиши духовное значение этого изображения',
       );
       final params = GenerationParams(maxTokens: 200, temperature: 0.7);
-      
+
       final response = await _llama.generateMultimodal(input, params);
-      
+
       setState(() {
-        _output = 'Анализ изображения:\n\n${response.text}\n\n'
+        _output =
+            'Анализ изображения:\n\n${response.text}\n\n'
             'Обработанные модальности: ${response.processedModalities.join(', ')}\n'
             'Vision info: ${response.visionInfo ?? 'Нет данных'}';
         _isLoading = false;
@@ -87,11 +89,12 @@ class _MultimodalDemoState extends State<MultimodalDemo> {
         text: 'Проанализируй эту мантру',
       );
       final params = GenerationParams(maxTokens: 200, temperature: 0.7);
-      
+
       final response = await _llama.generateMultimodal(input, params);
-      
+
       setState(() {
-        _output = 'Обработка аудио:\n\n${response.text}\n\n'
+        _output =
+            'Обработка аудио:\n\n${response.text}\n\n'
             'Обработанные модальности: ${response.processedModalities.join(', ')}\n'
             'Audio info: ${response.audioInfo ?? 'Нет данных'}';
         _isLoading = false;
@@ -119,11 +122,12 @@ class _MultimodalDemoState extends State<MultimodalDemo> {
         audioPath: '/path/to/bhajan.mp3',
       );
       final params = GenerationParams(maxTokens: 300, temperature: 0.7);
-      
+
       final response = await _llama.generateMultimodal(input, params);
-      
+
       setState(() {
-        _output = 'Смешанный анализ:\n\n${response.text}\n\n'
+        _output =
+            'Смешанный анализ:\n\n${response.text}\n\n'
             'Обработанные модальности: ${response.processedModalities.join(', ')}\n'
             'Мультимодальная информация: ${response.multimodalInfo ?? 'Нет данных'}';
         _isLoading = false;
@@ -146,13 +150,16 @@ class _MultimodalDemoState extends State<MultimodalDemo> {
     try {
       final input = MultimodalInput.text('Расскажи о духовном пути');
       final params = GenerationParams(maxTokens: 200, temperature: 0.7);
-      
-      await for (final response in _llama.generateMultimodalStream(input, params)) {
+
+      await for (final response in _llama.generateMultimodalStream(
+        input,
+        params,
+      )) {
         setState(() {
           _output += response.text;
         });
       }
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -209,14 +216,14 @@ class _MultimodalDemoState extends State<MultimodalDemo> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Индикатор загрузки
             if (_isLoading) const LinearProgressIndicator(),
-            
+
             const SizedBox(height: 16),
-            
+
             // Вывод
             Expanded(
               child: Card(

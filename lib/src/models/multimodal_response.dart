@@ -2,22 +2,22 @@
 class MultimodalResponse {
   /// Сгенерированный текст
   final String text;
-  
+
   /// Метаданные о генерации
   final Map<String, dynamic> metadata;
-  
+
   /// Время генерации в миллисекундах
   final int generationTimeMs;
-  
+
   /// Количество токенов
   final int tokensGenerated;
-  
+
   /// Тип мультимодального ввода
   final MultimodalType inputType;
-  
+
   /// Обработанные модальности
   final List<String> processedModalities;
-  
+
   /// Дополнительная информация о мультимодальной обработке
   final Map<String, dynamic>? multimodalInfo;
 
@@ -115,8 +115,9 @@ class MultimodalResponse {
   bool get hasAudioProcessing => processedModalities.contains('audio');
 
   /// Проверить, является ли ответ мультимодальным
-  bool get isMultimodal => processedModalities.length > 1 || 
-                          processedModalities.any((m) => m != 'text');
+  bool get isMultimodal =>
+      processedModalities.length > 1 ||
+      processedModalities.any((m) => m != 'text');
 
   /// Получить скорость генерации (токены в секунду)
   double get tokensPerSecond {
@@ -156,7 +157,9 @@ class MultimodalResponse {
         (e) => e.name == map['inputType'],
         orElse: () => MultimodalType.text,
       ),
-      processedModalities: List<String>.from(map['processedModalities'] as List? ?? []),
+      processedModalities: List<String>.from(
+        map['processedModalities'] as List? ?? [],
+      ),
       multimodalInfo: map['multimodalInfo'] as Map<String, dynamic>?,
     );
   }

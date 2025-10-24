@@ -35,7 +35,7 @@ class _MultimodalExampleState extends State<MultimodalExample> {
       // Получаем путь к assets
       final documentsDir = await getApplicationDocumentsDirectory();
       final modelPath = '${documentsDir.path}/shridhar_multimodal_gguf';
-      
+
       // Создаем конфигурацию для мультимодальной модели
       final config = MultimodalConfig.full(
         textModelPath: '$modelPath/text_model',
@@ -48,11 +48,13 @@ class _MultimodalExampleState extends State<MultimodalExample> {
       );
 
       final success = await _llama.loadMultimodalModel(config);
-      
+
       setState(() {
         _isLoading = false;
         _isModelLoaded = success;
-        _status = success ? 'Модель загружена успешно' : 'Ошибка загрузки модели';
+        _status = success
+            ? 'Модель загружена успешно'
+            : 'Ошибка загрузки модели';
       });
 
       if (success) {
@@ -92,11 +94,12 @@ class _MultimodalExampleState extends State<MultimodalExample> {
       );
 
       final response = await _llama.generateMultimodal(input, params);
-      
+
       setState(() {
         _isLoading = false;
         _output = response.text;
-        _status = 'Сгенерировано ${response.tokensGenerated} токенов за ${response.generationTimeMs}ms';
+        _status =
+            'Сгенерировано ${response.tokensGenerated} токенов за ${response.generationTimeMs}ms';
       });
     } catch (e) {
       setState(() {
@@ -119,16 +122,14 @@ class _MultimodalExampleState extends State<MultimodalExample> {
       final response = await _llama.describeImage(
         imagePath,
         prompt,
-        params: GenerationParams(
-          maxTokens: 256,
-          temperature: 0.7,
-        ),
+        params: GenerationParams(maxTokens: 256, temperature: 0.7),
       );
-      
+
       setState(() {
         _isLoading = false;
         _output = response.text;
-        _status = 'Изображение проанализировано. Обработаны модальности: ${response.processedModalities.join(', ')}';
+        _status =
+            'Изображение проанализировано. Обработаны модальности: ${response.processedModalities.join(', ')}';
       });
     } catch (e) {
       setState(() {
@@ -151,16 +152,14 @@ class _MultimodalExampleState extends State<MultimodalExample> {
       final response = await _llama.processAudio(
         audioPath,
         prompt,
-        params: GenerationParams(
-          maxTokens: 256,
-          temperature: 0.7,
-        ),
+        params: GenerationParams(maxTokens: 256, temperature: 0.7),
       );
-      
+
       setState(() {
         _isLoading = false;
         _output = response.text;
-        _status = 'Аудио обработано. Обработаны модальности: ${response.processedModalities.join(', ')}';
+        _status =
+            'Аудио обработано. Обработаны модальности: ${response.processedModalities.join(', ')}';
       });
     } catch (e) {
       setState(() {
@@ -188,16 +187,14 @@ class _MultimodalExampleState extends State<MultimodalExample> {
         text: text,
         imagePath: imagePath,
         audioPath: audioPath,
-        params: GenerationParams(
-          maxTokens: 256,
-          temperature: 0.7,
-        ),
+        params: GenerationParams(maxTokens: 256, temperature: 0.7),
       );
-      
+
       setState(() {
         _isLoading = false;
         _output = response.text;
-        _status = 'Смешанный ввод обработан. Обработаны модальности: ${response.processedModalities.join(', ')}';
+        _status =
+            'Смешанный ввод обработан. Обработаны модальности: ${response.processedModalities.join(', ')}';
       });
     } catch (e) {
       setState(() {
@@ -236,9 +233,9 @@ class _MultimodalExampleState extends State<MultimodalExample> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Кнопки для тестирования
             if (_isModelLoaded) ...[
               const Text(
@@ -246,16 +243,17 @@ class _MultimodalExampleState extends State<MultimodalExample> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              
+
               // Текстовые тесты
               ElevatedButton.icon(
-                onPressed: () => _generateText('Расскажи о философии вайшнавизма'),
+                onPressed: () =>
+                    _generateText('Расскажи о философии вайшнавизма'),
                 icon: const Icon(Icons.text_fields),
                 label: const Text('Текстовый тест'),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Тест изображения
               ElevatedButton.icon(
                 onPressed: () => _analyzeImage(
@@ -265,9 +263,9 @@ class _MultimodalExampleState extends State<MultimodalExample> {
                 icon: const Icon(Icons.image),
                 label: const Text('Анализ изображения'),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Тест аудио
               ElevatedButton.icon(
                 onPressed: () => _processAudio(
@@ -277,9 +275,9 @@ class _MultimodalExampleState extends State<MultimodalExample> {
                 icon: const Icon(Icons.audiotrack),
                 label: const Text('Обработка аудио'),
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Смешанный тест
               ElevatedButton.icon(
                 onPressed: () => _processMixedInput(
@@ -291,9 +289,9 @@ class _MultimodalExampleState extends State<MultimodalExample> {
                 label: const Text('Смешанный ввод'),
               ),
             ],
-            
+
             const SizedBox(height: 16),
-            
+
             // Вывод
             Expanded(
               child: Card(
@@ -304,13 +302,18 @@ class _MultimodalExampleState extends State<MultimodalExample> {
                     children: [
                       const Text(
                         'Результат:',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Expanded(
                         child: SingleChildScrollView(
                           child: Text(
-                            _output.isEmpty ? 'Результат появится здесь...' : _output,
+                            _output.isEmpty
+                                ? 'Результат появится здесь...'
+                                : _output,
                             style: const TextStyle(fontSize: 14),
                           ),
                         ),

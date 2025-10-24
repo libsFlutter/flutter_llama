@@ -10,7 +10,9 @@ import 'models/multimodal_response.dart';
 
 /// Мультимодальный класс для работы с llama.cpp моделями
 class FlutterLlamaMultimodal {
-  static const MethodChannel _channel = MethodChannel('flutter_llama_multimodal');
+  static const MethodChannel _channel = MethodChannel(
+    'flutter_llama_multimodal',
+  );
 
   static FlutterLlamaMultimodal? _instance;
   bool _isInitialized = false;
@@ -35,12 +37,14 @@ class FlutterLlamaMultimodal {
   MultimodalConfig? get currentConfig => _currentConfig;
 
   /// Initialize and load a multimodal GGUF model
-  /// 
+  ///
   /// Returns true if successful, false otherwise
   Future<bool> loadMultimodalModel(MultimodalConfig config) async {
     try {
       if (kDebugMode) {
-        print('[FlutterLlamaMultimodal] Loading multimodal model: ${config.textModelPath}');
+        print(
+          '[FlutterLlamaMultimodal] Loading multimodal model: ${config.textModelPath}',
+        );
         if (config.mmprojPath != null) {
           print('[FlutterLlamaMultimodal] MMProj path: ${config.mmprojPath}');
         }
@@ -54,10 +58,12 @@ class FlutterLlamaMultimodal {
       _isModelLoaded = result ?? false;
       _isInitialized = _isModelLoaded;
       _currentConfig = _isModelLoaded ? config : null;
-      
+
       if (_isModelLoaded) {
         if (kDebugMode) {
-          print('[FlutterLlamaMultimodal] Multimodal model loaded successfully');
+          print(
+            '[FlutterLlamaMultimodal] Multimodal model loaded successfully',
+          );
           print('[FlutterLlamaMultimodal] Config: $config');
         }
       } else {
@@ -79,36 +85,39 @@ class FlutterLlamaMultimodal {
   }
 
   /// Generate text from multimodal input
-  /// 
+  ///
   /// Returns [MultimodalResponse] with generated text and metadata
   Future<MultimodalResponse> generateMultimodal(
     MultimodalInput input,
     GenerationParams params,
   ) async {
     if (!_isModelLoaded) {
-      throw StateError('Multimodal model not loaded. Call loadMultimodalModel() first.');
+      throw StateError(
+        'Multimodal model not loaded. Call loadMultimodalModel() first.',
+      );
     }
 
     try {
       if (kDebugMode) {
-        print('[FlutterLlamaMultimodal] Generating with multimodal input: $input');
+        print(
+          '[FlutterLlamaMultimodal] Generating with multimodal input: $input',
+        );
         print('[FlutterLlamaMultimodal] Generation params: $params');
       }
 
       final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'generateMultimodal',
-        {
-          'input': input.toMap(),
-          'params': params.toMap(),
-        },
+        {'input': input.toMap(), 'params': params.toMap()},
       );
 
       if (result == null) {
         throw Exception('Multimodal generation returned null result');
       }
 
-      final response = MultimodalResponse.fromMap(Map<String, dynamic>.from(result));
-      
+      final response = MultimodalResponse.fromMap(
+        Map<String, dynamic>.from(result),
+      );
+
       if (kDebugMode) {
         print('[FlutterLlamaMultimodal] Generated: $response');
       }
@@ -123,25 +132,29 @@ class FlutterLlamaMultimodal {
   }
 
   /// Generate text as a stream from multimodal input
-  /// 
+  ///
   /// Returns Stream of [MultimodalResponse] (token by token)
   Stream<MultimodalResponse> generateMultimodalStream(
     MultimodalInput input,
     GenerationParams params,
   ) async* {
     if (!_isModelLoaded) {
-      throw StateError('Multimodal model not loaded. Call loadMultimodalModel() first.');
+      throw StateError(
+        'Multimodal model not loaded. Call loadMultimodalModel() first.',
+      );
     }
 
     try {
       if (kDebugMode) {
-        print('[FlutterLlamaMultimodal] Streaming multimodal generation with input: $input');
+        print(
+          '[FlutterLlamaMultimodal] Streaming multimodal generation with input: $input',
+        );
         print('[FlutterLlamaMultimodal] Generation params: $params');
       }
 
       // Set up event channel for streaming
       final eventChannel = EventChannel('flutter_llama_multimodal/stream');
-      
+
       // Send generation request
       await _channel.invokeMethod('generateMultimodalStream', {
         'input': input.toMap(),
@@ -151,13 +164,17 @@ class FlutterLlamaMultimodal {
       // Listen to response stream
       await for (final responseData in eventChannel.receiveBroadcastStream()) {
         if (responseData is Map) {
-          final response = MultimodalResponse.fromMap(Map<String, dynamic>.from(responseData));
+          final response = MultimodalResponse.fromMap(
+            Map<String, dynamic>.from(responseData),
+          );
           yield response;
         }
       }
     } catch (e) {
       if (kDebugMode) {
-        print('[FlutterLlamaMultimodal] Error in streaming multimodal generation: $e');
+        print(
+          '[FlutterLlamaMultimodal] Error in streaming multimodal generation: $e',
+        );
       }
       rethrow;
     }
@@ -171,7 +188,7 @@ class FlutterLlamaMultimodal {
   }) async {
     final input = MultimodalInput.image(imagePath, text: prompt);
     final generationParams = params ?? GenerationParams();
-    
+
     return generateMultimodal(input, generationParams);
   }
 
@@ -183,7 +200,7 @@ class FlutterLlamaMultimodal {
   }) async {
     final input = MultimodalInput.audio(audioPath, text: prompt);
     final generationParams = params ?? GenerationParams();
-    
+
     return generateMultimodal(input, generationParams);
   }
 
@@ -200,7 +217,7 @@ class FlutterLlamaMultimodal {
       audioPath: audioPath,
     );
     final generationParams = params ?? GenerationParams();
-    
+
     return generateMultimodal(input, generationParams);
   }
 
@@ -214,11 +231,13 @@ class FlutterLlamaMultimodal {
       final result = await _channel.invokeMethod<Map<dynamic, dynamic>>(
         'getMultimodalModelInfo',
       );
-      
+
       return result != null ? Map<String, dynamic>.from(result) : null;
     } catch (e) {
       if (kDebugMode) {
-        print('[FlutterLlamaMultimodal] Error getting multimodal model info: $e');
+        print(
+          '[FlutterLlamaMultimodal] Error getting multimodal model info: $e',
+        );
       }
       return null;
     }
@@ -227,7 +246,7 @@ class FlutterLlamaMultimodal {
   /// Check if current model supports specific modality
   bool supportsModality(String modality) {
     if (_currentConfig == null) return false;
-    
+
     switch (modality.toLowerCase()) {
       case 'image':
       case 'vision':
@@ -244,11 +263,11 @@ class FlutterLlamaMultimodal {
   /// Get supported modalities
   List<String> getSupportedModalities() {
     if (_currentConfig == null) return ['text'];
-    
+
     final modalities = <String>['text'];
     if (_currentConfig!.supportsImages) modalities.add('image');
     if (_currentConfig!.supportsAudio) modalities.add('audio');
-    
+
     return modalities;
   }
 
@@ -260,12 +279,14 @@ class FlutterLlamaMultimodal {
       }
 
       await _channel.invokeMethod<void>('unloadMultimodalModel');
-      
+
       _isModelLoaded = false;
       _currentConfig = null;
-      
+
       if (kDebugMode) {
-        print('[FlutterLlamaMultimodal] Multimodal model unloaded successfully');
+        print(
+          '[FlutterLlamaMultimodal] Multimodal model unloaded successfully',
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -281,7 +302,9 @@ class FlutterLlamaMultimodal {
       await _channel.invokeMethod<void>('stopMultimodalGeneration');
     } catch (e) {
       if (kDebugMode) {
-        print('[FlutterLlamaMultimodal] Error stopping multimodal generation: $e');
+        print(
+          '[FlutterLlamaMultimodal] Error stopping multimodal generation: $e',
+        );
       }
     }
   }

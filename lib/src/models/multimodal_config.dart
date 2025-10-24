@@ -2,34 +2,34 @@
 class MultimodalConfig {
   /// Путь к основной текстовой модели
   final String textModelPath;
-  
+
   /// Путь к мультимодальному проектору (mmproj)
   final String? mmprojPath;
-  
+
   /// Поддержка изображений
   final bool enableVision;
-  
+
   /// Поддержка аудио
   final bool enableAudio;
-  
+
   /// Vision энкодер (git, clip, etc.)
   final String visionEncoder;
-  
+
   /// Audio энкодер (wav2vec2, whisper, etc.)
   final String audioEncoder;
-  
+
   /// Размер проекции для мультимодальных признаков
   final int projectionDim;
-  
+
   /// Максимальный размер изображения
   final int maxImageSize;
-  
+
   /// Максимальная длительность аудио (секунды)
   final int maxAudioDuration;
-  
+
   /// Использовать ли GPU для мультимодальной обработки
   final bool useGpuForMultimodal;
-  
+
   /// Дополнительные параметры
   final Map<String, dynamic>? extraParams;
 
@@ -57,7 +57,10 @@ class MultimodalConfig {
   }
 
   /// Создать конфигурацию для текста + изображений
-  factory MultimodalConfig.textAndImage(String textModelPath, String mmprojPath) {
+  factory MultimodalConfig.textAndImage(
+    String textModelPath,
+    String mmprojPath,
+  ) {
     return MultimodalConfig(
       textModelPath: textModelPath,
       mmprojPath: mmprojPath,
@@ -67,7 +70,10 @@ class MultimodalConfig {
   }
 
   /// Создать конфигурацию для текста + аудио
-  factory MultimodalConfig.textAndAudio(String textModelPath, String mmprojPath) {
+  factory MultimodalConfig.textAndAudio(
+    String textModelPath,
+    String mmprojPath,
+  ) {
     return MultimodalConfig(
       textModelPath: textModelPath,
       mmprojPath: mmprojPath,

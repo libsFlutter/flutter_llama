@@ -2,16 +2,16 @@
 class MultimodalInput {
   /// Текстовый промпт
   final String? text;
-  
+
   /// Путь к изображению
   final String? imagePath;
-  
+
   /// Путь к аудио файлу
   final String? audioPath;
-  
+
   /// Тип мультимодального ввода
   final MultimodalType type;
-  
+
   /// Дополнительные параметры для обработки
   final Map<String, dynamic>? metadata;
 
@@ -33,7 +33,11 @@ class MultimodalInput {
   }
 
   /// Создать ввод с изображением
-  factory MultimodalInput.image(String imagePath, {String? text, Map<String, dynamic>? metadata}) {
+  factory MultimodalInput.image(
+    String imagePath, {
+    String? text,
+    Map<String, dynamic>? metadata,
+  }) {
     return MultimodalInput(
       text: text,
       imagePath: imagePath,
@@ -43,7 +47,11 @@ class MultimodalInput {
   }
 
   /// Создать ввод с аудио
-  factory MultimodalInput.audio(String audioPath, {String? text, Map<String, dynamic>? metadata}) {
+  factory MultimodalInput.audio(
+    String audioPath, {
+    String? text,
+    Map<String, dynamic>? metadata,
+  }) {
     return MultimodalInput(
       text: text,
       audioPath: audioPath,
@@ -133,13 +141,13 @@ class MultimodalInput {
 enum MultimodalType {
   /// Только текст
   text,
-  
+
   /// Текст + изображение
   image,
-  
+
   /// Текст + аудио
   audio,
-  
+
   /// Смешанный ввод (текст + изображение + аудио)
   mixed,
 }
