@@ -187,7 +187,7 @@ class FlutterLlamaMultimodal {
     GenerationParams? params,
   }) async {
     final input = MultimodalInput.image(imagePath, text: prompt);
-    final generationParams = params ?? GenerationParams();
+    final generationParams = params ?? GenerationParams(prompt: prompt);
 
     return generateMultimodal(input, generationParams);
   }
@@ -199,7 +199,7 @@ class FlutterLlamaMultimodal {
     GenerationParams? params,
   }) async {
     final input = MultimodalInput.audio(audioPath, text: prompt);
-    final generationParams = params ?? GenerationParams();
+    final generationParams = params ?? GenerationParams(prompt: prompt);
 
     return generateMultimodal(input, generationParams);
   }
@@ -216,7 +216,7 @@ class FlutterLlamaMultimodal {
       imagePath: imagePath,
       audioPath: audioPath,
     );
-    final generationParams = params ?? GenerationParams();
+    final generationParams = params ?? GenerationParams(prompt: text ?? '');
 
     return generateMultimodal(input, generationParams);
   }

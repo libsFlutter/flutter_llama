@@ -1,3 +1,5 @@
+import 'multimodal_input.dart' show MultimodalType;
+
 /// Мультимодальный ответ от модели
 class MultimodalResponse {
   /// Сгенерированный текст
