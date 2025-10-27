@@ -1,6 +1,6 @@
 name: flutter_llama
 description: "Flutter plugin for running LLM inference with llama.cpp and GGUF models on Android and iOS"
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/nativemind/flutter_llama
 repository: https://github.com/nativemind/flutter_llama
 issue_tracker: https://github.com/nativemind/flutter_llama/issues
