@@ -46,6 +46,29 @@ run_demo.sh
 # Keep minimal documentation
 # README.md and CHANGELOG.md will be included
 
+# Exclude llama.cpp build artifacts (keep source)
+llama.cpp/build/
+llama.cpp/models/
+llama.cpp/.git/
+llama.cpp/tools/**/node_modules/
+llama.cpp/tools/**/package-lock.json
+
+# Exclude build artifacts
+build/
+macos/llama_build_macos/
+ios/build/
+android/.gradle/
+
+# Exclude models
+assets/models/
+models_temp/
+
+# Exclude Python virtual environments
+venv_convert/
+
+# Exclude scripts
+scripts/
+
 
 
 

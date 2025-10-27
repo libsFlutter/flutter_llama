@@ -1,5 +1,3 @@
-library flutter_llama;
-
 export 'src/flutter_llama.dart';
 export 'src/flutter_llama_multimodal.dart';
 export 'src/models/llama_config.dart';

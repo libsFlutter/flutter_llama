@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'models/llama_config.dart';
 import 'models/generation_params.dart';
-import 'models/llama_response.dart';
 import 'models/multimodal_input.dart';
 import 'models/multimodal_config.dart';
 import 'models/multimodal_response.dart';
