@@ -5,6 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
+import 'screens/model_manager_screen.dart';
+import 'services/model_downloader.dart';
 
 void main() {
   runApp(const MyApp());
@@ -99,6 +101,62 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  /// Выбор модели
+  Future<void> _pickModel() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['gguf', 'safetensors'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        _modelPath = result.files.single.path!;
+        await _loadModel();
+      }
+    } catch (e) {
+      _addSystemMessage('Ошибка выбора файла: $e');
+    }
+  }
+
+  /// Открыть менеджер моделей
+  Future<void> _openModelManager() async {
+    final modelId = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ModelManagerScreen(),
+      ),
+    );
+
+    if (modelId != null) {
+      // Пользователь выбрал модель из менеджера
+      await _loadDownloadedModel(modelId);
+    }
+  }
+
+  /// Загрузка скачанной модели
+  Future<void> _loadDownloadedModel(String modelId) async {
+    try {
+      setState(() {
+        _addSystemMessage('Поиск модели $modelId...');
+      });
+
+      // Получаем путь к модели
+      final modelPath = await ModelDownloader.getModelPath(
+        modelId,
+        'adapter_model.safetensors',
+      );
+
+      if (modelPath != null) {
+        _modelPath = modelPath;
+        await _loadModel();
+      } else {
+        _addSystemMessage('Модель не найдена. Пожалуйста, скачайте её сначала.');
+      }
+    } catch (e) {
+      _addSystemMessage('Ошибка загрузки модели: $e');
+    }
+  }
+
   /// Загрузка модели из assets
   Future<void> _loadModelFromAssets() async {
     try {
@@ -122,7 +180,9 @@ class _ChatScreenState extends State<ChatScreen> {
       _modelPath = modelFile.path;
       await _loadModel();
     } catch (e) {
-      _addSystemMessage('Ошибка загрузки модели: $e');
+      _addSystemMessage(
+        'Ошибка загрузки модели: $e\nИспользуйте кнопку "Менеджер моделей" для скачивания моделей с Hugging Face.',
+      );
     }
   }
 
@@ -345,6 +405,11 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.cloud_download_outlined),
+            onPressed: _openModelManager,
+            tooltip: 'Менеджер моделей',
+          ),
           if (_isModelLoaded)
             IconButton(
               icon: const Icon(Icons.delete_outline),
@@ -353,11 +418,11 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           IconButton(
             icon: Icon(
-              _isModelLoaded ? Icons.check_circle : Icons.cloud_download,
+              _isModelLoaded ? Icons.check_circle : Icons.file_open,
             ),
             color: _isModelLoaded ? Colors.green : Colors.grey,
-            onPressed: _isModelLoaded ? null : _loadModel,
-            tooltip: _isModelLoaded ? 'Модель загружена' : 'Загрузить модель',
+            onPressed: _isModelLoaded ? null : _pickModel,
+            tooltip: _isModelLoaded ? 'Модель загружена' : 'Выбрать модель',
           ),
         ],
       ),

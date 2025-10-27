@@ -396,3 +396,7 @@ flutter build apk --release --split-per-abi
 **Статус:** Mock режим  
 **Для production:** Следуйте инструкциям выше для интеграции llama.cpp
 
+
+
+
+

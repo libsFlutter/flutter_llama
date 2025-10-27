@@ -61,3 +61,7 @@ cd example && flutter test integration_test/text_generation_test.dart -d R7AY804
 Увидите реальные результаты генерации! 🚀
 
 
+
+
+
+

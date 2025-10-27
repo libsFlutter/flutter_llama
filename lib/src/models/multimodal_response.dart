@@ -186,3 +186,4 @@ class MultimodalResponse {
     return Object.hash(text, inputType, tokensGenerated, generationTimeMs);
   }
 }
+
