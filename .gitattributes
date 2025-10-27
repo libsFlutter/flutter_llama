@@ -1,5 +1,18 @@
+# Git LFS configuration for flutter_llama
+
+# GGUF model files (LLM models)
 *.gguf filter=lfs diff=lfs merge=lfs -text
+# Native libraries - Android
+*.so filter=lfs diff=lfs merge=lfs -text
+*.aar filter=lfs diff=lfs merge=lfs -text
+# Native libraries - iOS/macOS
+*.framework filter=lfs diff=lfs merge=lfs -text
+*.a filter=lfs diff=lfs merge=lfs -text
+*.dylib filter=lfs diff=lfs merge=lfs -text
+# Compiled binaries
+bin/llama-* filter=lfs diff=lfs merge=lfs -text
+# Other large binary files
+*.bin filter=lfs diff=lfs merge=lfs -text
 *.safetensors filter=lfs diff=lfs merge=lfs -text
 *.o filter=lfs diff=lfs merge=lfs -text
-*.a filter=lfs diff=lfs merge=lfs -text
 llama-server filter=lfs diff=lfs merge=lfs -text
