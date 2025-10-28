@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2025-01-28
+
+### Fixed
+- Fixed package dependencies: moved `http`, `path`, and `path_provider` from `dev_dependencies` to `dependencies` for proper pub.dev publishing
+- Resolved package validation errors for service dependencies
+
+### Changed
+- Updated package structure for better dependency management
+
 ## [1.0.1] - 2025-01-27
 
 ### Fixed
