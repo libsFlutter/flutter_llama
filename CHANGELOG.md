@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.2] - 2025-01-28
+
+### Changed
+- Optimized package size by excluding debug symbols and build artifacts
+- Added comprehensive .pubignore to reduce package size from 234 MB to 20 MB
+
 ## [1.1.1] - 2025-01-28
 
 ### Fixed
