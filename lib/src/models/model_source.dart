@@ -109,3 +109,4 @@ class DownloadProgress {
 /// Callback для отслеживания прогресса загрузки
 typedef DownloadProgressCallback = void Function(DownloadProgress progress);
 
+
