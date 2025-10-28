@@ -4,6 +4,9 @@ import 'package:flutter/services.dart';
 import 'models/llama_config.dart';
 import 'models/generation_params.dart';
 import 'models/llama_response.dart';
+import 'models/model_source.dart';
+import 'models/preset_model.dart';
+import 'services/model_manager.dart';
 
 /// Main class for interacting with llama.cpp models
 class FlutterLlama {
@@ -193,6 +196,85 @@ class FlutterLlama {
         print('[FlutterLlama] Error stopping generation: $e');
       }
     }
+  }
+  
+  /// Load model with automatic download from HuggingFace or Ollama
+  /// 
+  /// This method will:
+  /// 1. Check if model is already downloaded
+  /// 2. If not, download it from the specified source
+  /// 3. Load the model into memory
+  /// 
+  /// Returns true if successful, false otherwise
+  Future<bool> loadModelWithAutoDownload({
+    required String modelId,
+    ModelSource source = ModelSource.huggingFace,
+    String? variant,
+    String? specificFile,
+    LlamaConfig? config,
+    required DownloadProgressCallback onProgress,
+    bool autoDownload = true,
+  }) async {
+    try {
+      if (kDebugMode) {
+        print('[FlutterLlama] Loading model with auto-download: $modelId');
+      }
+      
+      // Create model manager
+      final manager = ModelManager(
+        modelId: modelId,
+        source: source,
+        variant: variant,
+        specificFile: specificFile,
+      );
+      
+      // Ensure model is loaded (with auto-download if needed)
+      final modelPath = await manager.ensureModelLoaded(
+        onProgress: onProgress,
+        autoDownload: autoDownload,
+      );
+      
+      if (kDebugMode) {
+        print('[FlutterLlama] Model path: $modelPath');
+      }
+      
+      // Create config or use provided one
+      final llamaConfig = config ?? LlamaConfig(
+        modelPath: modelPath,
+        nThreads: 8,
+        nGpuLayers: -1, // Use all GPU layers
+        contextSize: 2048,
+        batchSize: 512,
+        useGpu: true,
+        verbose: false,
+      );
+      
+      // Load model into llama.cpp
+      return await loadModel(llamaConfig.copyWith(modelPath: modelPath));
+    } catch (e) {
+      if (kDebugMode) {
+        print('[FlutterLlama] Error loading model with auto-download: $e');
+      }
+      return false;
+    }
+  }
+  
+  /// Load preset model with automatic download
+  /// 
+  /// Convenience method for loading predefined models
+  Future<bool> loadPresetModel({
+    required PresetModel preset,
+    LlamaConfig? config,
+    required DownloadProgressCallback onProgress,
+  }) async {
+    return await loadModelWithAutoDownload(
+      modelId: preset.id,
+      source: preset.source,
+      variant: preset.variant,
+      specificFile: preset.files.isNotEmpty ? preset.files.first : null,
+      config: config,
+      onProgress: onProgress,
+    );
   }
 }
 

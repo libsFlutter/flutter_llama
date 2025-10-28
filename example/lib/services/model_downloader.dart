@@ -244,41 +244,6 @@ class ModelDownloader {
   }
 }
 
-/// Информация о предустановленных моделях
-class PresetModel {
-  final String id;
-  final String name;
-  final String description;
-  final List<String> ggufFiles;
-  final List<String> languages;
-  final String size;
-
-  const PresetModel({
-    required this.id,
-    required this.name,
-    required this.description,
-    required this.ggufFiles,
-    required this.languages,
-    required this.size,
-  });
-}
-
-/// Список предустановленных моделей
-class PresetModels {
-  static const shridharMultimodal = PresetModel(
-    id: 'nativemind/shridhar_8k_multimodal',
-    name: 'Shridhar 8K Multimodal',
-    description: 'Мультимодальная духовная модель с поддержкой 4 языков',
-    ggufFiles: [
-      'adapter_model.safetensors',
-      'adapter_config.json',
-    ],
-    languages: ['🇷🇺 Русский', '🇪🇸 Испанский', '🇮🇳 Хинди', '🇹🇭 Тайский'],
-    size: '~50 MB',
-  );
-
-  static const List<PresetModel> all = [
-    shridharMultimodal,
-  ];
-}
+// NOTE: PresetModel and PresetModels are now in flutter_llama library
+// Import them from 'package:flutter_llama/flutter_llama.dart'
 

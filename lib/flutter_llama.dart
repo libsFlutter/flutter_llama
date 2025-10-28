@@ -6,3 +6,8 @@ export 'src/models/generation_params.dart';
 export 'src/models/multimodal_input.dart';
 export 'src/models/multimodal_config.dart';
 export 'src/models/multimodal_response.dart';
+export 'src/models/model_source.dart';
+export 'src/models/preset_model.dart';
+export 'src/services/model_manager.dart';
+export 'src/services/ollama_downloader.dart';
+export 'src/services/huggingface_downloader.dart';

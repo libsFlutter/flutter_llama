@@ -4,8 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as path;
 import 'screens/model_manager_screen.dart';
+import 'screens/model_picker_screen.dart';
 import 'services/model_downloader.dart';
 
 void main() {
@@ -122,14 +122,32 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _openModelManager() async {
     final modelId = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (context) => const ModelManagerScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const ModelManagerScreen()),
     );
 
     if (modelId != null) {
       // Пользователь выбрал модель из менеджера
       await _loadDownloadedModel(modelId);
+    }
+  }
+
+  /// Открыть новый пикер моделей с lazy loading
+  Future<void> _openModelPicker() async {
+    final model = await Navigator.push<PresetModel>(
+      context,
+      MaterialPageRoute(builder: (context) => const ModelPickerScreen()),
+    );
+
+    if (model != null) {
+      // Модель уже загружена через ModelPickerScreen
+      setState(() {
+        _isModelLoaded = true;
+        _addSystemMessage(
+          'Модель ${model.name} готова к использованию!\n'
+          'Источник: ${model.source.displayName}\n'
+          'Размер: ${model.size}',
+        );
+      });
     }
   }
 
@@ -150,7 +168,9 @@ class _ChatScreenState extends State<ChatScreen> {
         _modelPath = modelPath;
         await _loadModel();
       } else {
-        _addSystemMessage('Модель не найдена. Пожалуйста, скачайте её сначала.');
+        _addSystemMessage(
+          'Модель не найдена. Пожалуйста, скачайте её сначала.',
+        );
       }
     } catch (e) {
       _addSystemMessage('Ошибка загрузки модели: $e');
@@ -406,6 +426,11 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _openModelPicker,
+            tooltip: '🦙 Скачать модель (HF/Ollama)',
+          ),
+          IconButton(
             icon: const Icon(Icons.cloud_download_outlined),
             onPressed: _openModelManager,
             tooltip: 'Менеджер моделей',
@@ -417,9 +442,7 @@ class _ChatScreenState extends State<ChatScreen> {
               tooltip: 'Очистить чат',
             ),
           IconButton(
-            icon: Icon(
-              _isModelLoaded ? Icons.check_circle : Icons.file_open,
-            ),
+            icon: Icon(_isModelLoaded ? Icons.check_circle : Icons.file_open),
             color: _isModelLoaded ? Colors.green : Colors.grey,
             onPressed: _isModelLoaded ? null : _pickModel,
             tooltip: _isModelLoaded ? 'Модель загружена' : 'Выбрать модель',

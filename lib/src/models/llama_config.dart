@@ -43,6 +43,27 @@ class LlamaConfig {
     };
   }
 
+  /// Создать копию конфигурации с изменениями
+  LlamaConfig copyWith({
+    String? modelPath,
+    int? nThreads,
+    int? nGpuLayers,
+    int? contextSize,
+    int? batchSize,
+    bool? useGpu,
+    bool? verbose,
+  }) {
+    return LlamaConfig(
+      modelPath: modelPath ?? this.modelPath,
+      nThreads: nThreads ?? this.nThreads,
+      nGpuLayers: nGpuLayers ?? this.nGpuLayers,
+      contextSize: contextSize ?? this.contextSize,
+      batchSize: batchSize ?? this.batchSize,
+      useGpu: useGpu ?? this.useGpu,
+      verbose: verbose ?? this.verbose,
+    );
+  }
+
   @override
   String toString() {
     return 'LlamaConfig(modelPath: $modelPath, nThreads: $nThreads, '
