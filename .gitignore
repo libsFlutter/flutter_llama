@@ -90,7 +90,9 @@ migrate_working_dir/
 # Build artifacts
 **/build/
 **/llama_build_*/
-**/macos_libs/*.a
+# Keep pre-built libraries for the plugin
+# **/macos_libs/*.a  - ВКЛЮЧЕНО: предкомпилированные библиотеки
+# **/ios_libs/*.a - ВКЛЮЧЕНО: предкомпилированные библиотеки
 **/macos_libs/*.dylib
 
 # Python virtual environments
