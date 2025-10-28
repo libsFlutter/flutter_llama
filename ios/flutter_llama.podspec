@@ -15,30 +15,14 @@ Supports GPU acceleration via Metal and CPU optimization via Accelerate framewor
   s.source           = { :path => '.' }
   
   # Source files
-  s.source_files = [
-    'Classes/**/*.{swift,h,m,mm}',
-    '../llama.cpp/*.{c,cpp,h}',
-    '../llama.cpp/common/*.{c,cpp,h}',
-    '../llama.cpp/ggml/src/*.{c,cpp,h}',
-    '../llama.cpp/ggml/src/ggml-metal.m'
-  ]
-  
-  # Exclude unnecessary files
-  s.exclude_files = [
-    '../llama.cpp/examples/**/*',
-    '../llama.cpp/tests/**/*',
-    '../llama.cpp/ggml/src/ggml-cuda/**/*',
-    '../llama.cpp/ggml/src/ggml-sycl/**/*',
-    '../llama.cpp/ggml/src/ggml-vulkan/**/*',
-    '../llama.cpp/ggml/src/ggml-kompute/**/*'
-  ]
-  
+  s.source_files = 'Classes/**/*.{swift,h,m,mm}'
   s.public_header_files = 'Classes/**/*.h'
   
-  # Resource bundle for Metal shaders
-  s.resource_bundles = {
-    'flutter_llama_resources' => ['../llama.cpp/ggml/src/ggml-metal.metal']
-  }
+  # Pre-built static libraries (embedded llama.cpp)
+  s.vendored_libraries = 'ios_libs/*.a'
+  
+  # Preserve llama.cpp headers
+  s.preserve_paths = '../llama.cpp/include/**/*', '../llama.cpp/ggml/include/**/*'
   
   # C++ settings
   s.library = 'c++'
@@ -51,9 +35,8 @@ Supports GPU acceleration via Metal and CPU optimization via Accelerate framewor
     'GCC_ENABLE_CPP_RTTI' => 'YES',
     'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
     'GCC_WARN_INHIBIT_ALL_WARNINGS' => 'YES',
-    'OTHER_CFLAGS' => '-DGGML_USE_ACCELERATE -DGGML_USE_METAL -DGGML_METAL_EMBED_LIBRARY -O3 -ffast-math',
-    'OTHER_CPLUSPLUSFLAGS' => '-DGGML_USE_ACCELERATE -DGGML_USE_METAL -DGGML_METAL_EMBED_LIBRARY -O3 -ffast-math',
-    'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/../llama.cpp" "${PODS_TARGET_SRCROOT}/../llama.cpp/common" "${PODS_TARGET_SRCROOT}/../llama.cpp/ggml/include" "${PODS_TARGET_SRCROOT}/../llama.cpp/ggml/src"'
+    'HEADER_SEARCH_PATHS' => '"${PODS_TARGET_SRCROOT}/../llama.cpp/include" "${PODS_TARGET_SRCROOT}/../llama.cpp/ggml/include"',
+    'OTHER_LDFLAGS' => '$(inherited) -force_load "${PODS_TARGET_SRCROOT}/ios_libs/libllama.a" -force_load "${PODS_TARGET_SRCROOT}/ios_libs/libggml.a" -force_load "${PODS_TARGET_SRCROOT}/ios_libs/libggml-base.a" -force_load "${PODS_TARGET_SRCROOT}/ios_libs/libggml-cpu.a" -force_load "${PODS_TARGET_SRCROOT}/ios_libs/libggml-metal.a" -force_load "${PODS_TARGET_SRCROOT}/ios_libs/libggml-blas.a"'
   }
   
   # Frameworks for GPU acceleration and optimization

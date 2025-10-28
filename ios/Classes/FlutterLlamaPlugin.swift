@@ -291,7 +291,7 @@ public class FlutterLlamaPlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     
     private func unloadModel(result: @escaping FlutterResult) {
         if modelLoaded {
-            llama_free_model()
+            llama_cpp_bridge_free_model()
             modelLoaded = false
             modelPath = nil
             NSLog("[FlutterLlama] Model unloaded")
@@ -386,7 +386,7 @@ func llama_get_model_info(
 )
 
 @_silgen_name("llama_free_model")
-func llama_free_model()
+func llama_cpp_bridge_free_model()
 
 @_silgen_name("llama_stop_generation")
 func llama_stop_generation()

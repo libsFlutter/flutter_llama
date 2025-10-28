@@ -51,7 +51,7 @@ bool llama_init_model(
         g_context = nullptr;
     }
     if (g_model) {
-        llama_free_model(g_model);
+        llama_model_free(g_model);
         g_model = nullptr;
     }
     
@@ -82,7 +82,7 @@ bool llama_init_model(
     g_context = llama_init_from_model(g_model, ctx_params);
     if (!g_context) {
         NSLog(@"[llama_cpp_bridge] Failed to create context");
-        llama_free_model(g_model);
+        llama_model_free(g_model);
         g_model = nullptr;
         return false;
     }
@@ -341,7 +341,7 @@ void llama_get_model_info(
 }
 
 // Free model
-void llama_free_model() {
+void llama_cpp_bridge_free_model() {
     std::lock_guard<std::mutex> lock(g_mutex);
     
     NSLog(@"[llama_cpp_bridge] Freeing model");
@@ -357,7 +357,7 @@ void llama_free_model() {
     }
     
     if (g_model) {
-        llama_free_model(g_model);
+        llama_model_free(g_model);
         g_model = nullptr;
     }
     
